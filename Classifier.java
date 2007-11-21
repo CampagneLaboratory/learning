@@ -52,6 +52,18 @@ public interface Classifier {
 	double predict(final ClassificationModel trainingModel, final ClassificationProblem problem,
 				   final int instanceIndex);
 
+	/**
+	 * Estimate probabilities that an instance belongs to each class of the model.
+	 *
+	 * @param trainingModel Model used for prediction.
+	 * @param problem Definition of the problem, containing the instance for which to predict
+	 * @param instanceIndex Index of the instance to predict in the problem.
+	 * @param probabilities the probability will be written for each label. probs[0]: first class, probs[1] second class,
+	 * and so on.
+	 * @return Predicted label
+	 */
+	public double predict(final ClassificationModel trainingModel, final ClassificationProblem problem,
+						  final int instanceIndex, double[] probabilities);
 
 	/**
 	 * Get parameters of the classification problem.

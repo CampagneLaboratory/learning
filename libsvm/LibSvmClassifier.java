@@ -6,7 +6,6 @@ import edu.mssm.crover.tables.writers.ClassificationModel;
 import edu.mssm.crover.tables.writers.ClassificationParameters;
 import libsvm.svm;
 import libsvm.svm_model;
-import libsvm.svm_parameter;
 import libsvm.svm_problem;
 /*
  * Copyright (C) 2001-2002 Mount Sinai School of Medicine
@@ -31,16 +30,16 @@ import libsvm.svm_problem;
  * @author: Fabien Campagne Date: Nov 20, 2007 Time: 5:24:27 PM
  */
 public class LibSvmClassifier implements Classifier {
-	private svm_parameter nativeParameters;
+	protected LibSvmParameters parameters;
 
 
 	public LibSvmClassifier() {
-		this.nativeParameters = new LibSvmParameters().getNative();
+		this.parameters = new LibSvmParameters();
 	}
 
 	public ClassificationModel train(final ClassificationProblem problem) {
 		svm_problem nativeProblem = getNativeProblem(problem);
-		return new LibSvmModel(svm.svm_train(nativeProblem, nativeParameters));
+		return new LibSvmModel(svm.svm_train(nativeProblem, parameters.getNative()));
 	}
 
 	private svm_problem getNativeProblem(final ClassificationProblem problem) {
@@ -54,8 +53,17 @@ public class LibSvmClassifier implements Classifier {
 		return svm.svm_predict(getNativeModel(trainingModel), getNativeProblem(problem).x[instanceIndex]);
 	}
 
+	public double predict(final ClassificationModel trainingModel, final ClassificationProblem problem,
+						  final int instanceIndex, double[] probabilities) {
+
+		return svm.svm_predict_probability(getNativeModel(trainingModel),
+				getNativeProblem(problem).x[instanceIndex],
+				probabilities);
+
+	}
+
 	public ClassificationParameters getParameters() {
-		return new LibSvmParameters(nativeParameters);
+		return parameters;
 	}
 
 	private svm_model getNativeModel(final ClassificationModel trainingModel) {
@@ -74,6 +82,6 @@ public class LibSvmClassifier implements Classifier {
 
 	public void setParameters(ClassificationParameters parameters) {
 		assert parameters instanceof LibSvmParameters;
-		this.nativeParameters = ((LibSvmParameters) parameters).getNative();
+		this.parameters = (LibSvmParameters) parameters;
 	}
 }

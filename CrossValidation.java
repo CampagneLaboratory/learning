@@ -24,10 +24,13 @@ import edu.mssm.crover.tables.writers.ClassificationModel;
 import edu.mssm.crover.tables.writers.ContingencyTable;
 import edu.mssm.crover.tables.writers.RandomAdapter;
 import edu.mssm.crover.tools.svmlight.EvaluationMeasure;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.Rserve.RConnection;
@@ -205,7 +208,7 @@ public class CrossValidation {
 
 		int splitIndex[] = new int[problem.getSize()];
 		indices.toArray(splitIndex);
-
+		DoubleList aucValues = new DoubleArrayList();
 		ContingencyTable ctable = new ContingencyTable();
 		for (int f = 0; f < k; ++f) { // use each fold as test set while the others are the training set:
 			IntSet trainingSet = new IntArraySet();
@@ -222,18 +225,35 @@ public class CrossValidation {
 			final ClassificationModel looModel = classifier.train(currentTrainingSet);
 			ContingencyTable ctableMicro = new ContingencyTable();
 
+			final double decisionValues[] = new double[testSet.size()];
+			final double labels[] = new double[testSet.size()];
+			int index = 0;
+			double probs[] = {0d, 0d};
 			for (int testInstanceIndex : testSet) {  // for each test example:
-				final double decision = classifier.predict(looModel, problem, testInstanceIndex);
+
+				final double decision = classifier.predict(looModel, problem, testInstanceIndex, probs);
 				final double trueLabel = problem.getLabel(testInstanceIndex);
+				decisionValues[index] = decision;
+				labels[index] = trueLabel;
+				index++;
 				ctable.observeDecision(trueLabel, decision);
 				ctableMicro.observeDecision(trueLabel, decision);
 			}
+			if (log.isDebugEnabled()) {
+				log.debug("decisions: " + ArrayUtils.toString(decisionValues));
+			}
+			if (log.isDebugEnabled()) {
+				log.debug("labels: " + ArrayUtils.toString(labels));
+			}
 			ctableMicro.average();
-
+			double aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
+			aucValues.add(aucForOneFold);
 		}
 		ctable.average();
 
-		return convertToEvalMeasure(ctable);
+		EvaluationMeasure measure = convertToEvalMeasure(ctable);
+		measure.setRocAucValues(aucValues);
+		return measure;
 	}
 
 	private EvaluationMeasure convertToEvalMeasure(ContingencyTable ctable) {
