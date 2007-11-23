@@ -1,6 +1,7 @@
 package edu.cornell.med.icb.learning.weka;
 
 import edu.cornell.med.icb.learning.ClassificationProblem;
+import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import weka.core.Attribute;
 import weka.core.FastVector;
@@ -39,14 +40,17 @@ public class WekaProblem implements ClassificationProblem {
 	}
 
 	public WekaProblem(final WekaProblem wekaProblem, final IntSet keepInstanceSet) {
-		//dataset = new Instances(this.toString(), dataset.);
+		dataset = new Instances(this.toString(), (FastVector) wekaProblem.attributes.copy(), keepInstanceSet.size());
 		for (int instanceIndex = 0; instanceIndex < wekaProblem.getSize(); instanceIndex++) {
-
+			if (keepInstanceSet.contains(instanceIndex)) {
+				dataset.add((Instance) wekaProblem.dataset.instance(instanceIndex).copy());
+			}
 		}
+		this.dataset.setClassIndex(wekaProblem.dataset.classIndex());
 	}
 
 	public double getLabel(final int instanceIndex) {
-		return dataset.instance(instanceIndex).value(dataset.attribute(labelIndex));
+		return dataset.instance(instanceIndex).value(dataset.attribute(labelIndex)) == 0 ? -1 : 1;
 	}
 
 	public int getSize() {
@@ -59,7 +63,13 @@ public class WekaProblem implements ClassificationProblem {
 	}
 
 	public ClassificationProblem filter(final int instanceIndex) {
-		return null;	//
+		final IntSet allButOne = new IntArraySet();
+		for (int index = 0; index < dataset.numInstances(); index++) {
+			if (index != instanceIndex) {
+				allButOne.add(instanceIndex);
+			}
+		}
+		return new WekaProblem(this, allButOne);
 	}
 
 	public void setInstance(int instanceIndex, double label, double features[]) {
@@ -72,12 +82,13 @@ public class WekaProblem implements ClassificationProblem {
 	}
 
 	public void setLabel(int instanceIndex, double label) {
-		dataset.instance(instanceIndex).setValue(dataset.attribute(labelIndex), label);
+		dataset.instance(instanceIndex)
+				.setValue(dataset.attribute(labelIndex), label == 1 ? "positiveClass" : "negativeClass");
 	}
 
 	public void setFeature(final int instanceIndex, final int featureIndex, final double featureValue) {
 		Instance instance = dataset.instance(instanceIndex);
-		instance.setValue(featureIndex + 1, featureIndex);
+		instance.setValue(featureIndex + 1, featureValue);
 	}
 
 	public int addInstance(final int maxNumberOfFeatures) {
@@ -89,7 +100,7 @@ public class WekaProblem implements ClassificationProblem {
 	}
 
 	public void prepareNative() {
-		// do nothing.
+		// do nothing. Already stored natively.
 	}
 
 	private void createDataset(final int maxNumberOfFeatures) {
@@ -97,13 +108,19 @@ public class WekaProblem implements ClassificationProblem {
 			final FastVector labelValues = new FastVector(2); // two classes
 			labelValues.addElement("negativeClass");
 			labelValues.addElement("positiveClass");
-			Attribute labelAttribute = new Attribute("label", labelValues);
+			Attribute labelAttribute = new Attribute("label", labelValues, 0);
+			attributes = new FastVector();
 			attributes.addElement(labelAttribute);
 			for (int i = 0; i < maxNumberOfFeatures; i++) {
-				Attribute attribute = new Attribute("feature" + i);
+				Attribute attribute = new Attribute("feature" + i, i + 1);
 				attributes.addElement(attribute);
 			}
-			dataset = new Instances(this.toString(), attributes, 0);
+			dataset = new Instances(this.toString(), (FastVector) attributes.copy(), 0);
+			dataset.setClassIndex(0);
 		}
+	}
+
+	public Instances getNative() {
+		return dataset;
 	}
 }
