@@ -71,4 +71,5 @@ public interface Classifier {
 	 * @return Parameters in use by this classifier.
 	 */
 	ClassificationParameters getParameters();
+    public String getShortName();
 }

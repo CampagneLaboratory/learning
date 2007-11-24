@@ -35,7 +35,13 @@ public class WekaClassifier implements Classifier {
 	public static Logger log = Logger.getLogger(WekaClassifier.class);
 	final private double[] labelIndex2LabelValue = {-1d, 1d};
 
-	public void setParameters(ClassificationParameters parameters) {
+    public WekaClassifier(
+            final weka.classifiers.Classifier delegate) {
+      this.delegate=delegate;
+        this.defaultParameters=new WekaParameters();
+    }
+
+    public void setParameters(ClassificationParameters parameters) {
 		assert parameters instanceof WekaParameters : "parameters must be Weka parameters.";
 		this.defaultParameters = (WekaParameters) parameters;
 	}
@@ -55,7 +61,7 @@ public class WekaClassifier implements Classifier {
 			delegate.setOptions(defaultParameters.getNative());
 //			System.out.println("weka Problem: "+getWekaProblem(problem));
 			delegate.buildClassifier(getWekaProblem(problem));
-			return new WekaModel();
+			return new WekaModel(this);
 		} catch (Exception e) {
 			log.error("Weka classifier has thrown exception.", e);
 			return null;
@@ -133,7 +139,12 @@ public class WekaClassifier implements Classifier {
 		return defaultParameters;
 	}
 
-	private Instances getWekaProblem(final ClassificationProblem problem) {
+    public String getShortName() {
+        instanciateClassifier();
+        return "weka!"+delegate.getClass().getName();
+    }
+
+    private Instances getWekaProblem(final ClassificationProblem problem) {
 		assert problem instanceof WekaProblem : "problem must be weka problem.";
 		return ((WekaProblem) problem).getNative();
 	}
@@ -143,4 +154,8 @@ public class WekaClassifier implements Classifier {
 		return wekaClassifier.delegate;
 
 	}
+
+    public weka.classifiers.Classifier getNative() {
+        return delegate;
+    }
 }

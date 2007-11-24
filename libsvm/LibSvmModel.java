@@ -1,7 +1,10 @@
 package edu.cornell.med.icb.learning.libsvm;
 
 import edu.mssm.crover.tables.writers.ClassificationModel;
+import libsvm.svm;
 import libsvm.svm_model;
+
+import java.io.IOException;
 /*
  * Copyright (C) 2001-2002 Mount Sinai School of Medicine
  * Copyright (C) 2003-2007 Institute for Computational Biomedicine,
@@ -30,4 +33,12 @@ public class LibSvmModel extends ClassificationModel {
 	public LibSvmModel(final svm_model svm_model) {
 		this.nativeModel = svm_model;
 	}
+
+    public LibSvmModel(final String modelFilename) throws IOException {
+        nativeModel=svm.svm_load_model(modelFilename);
+    }
+
+    public void write(final String filename) throws IOException {
+        svm.svm_save_model(filename, nativeModel);
+    }
 }

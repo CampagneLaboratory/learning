@@ -66,7 +66,11 @@ public class LibSvmClassifier implements Classifier {
 		return parameters;
 	}
 
-	private svm_model getNativeModel(final ClassificationModel trainingModel) {
+    public String getShortName() {
+        return "libSVM";
+    }
+
+    private svm_model getNativeModel(final ClassificationModel trainingModel) {
 		assert trainingModel instanceof LibSvmModel;
 		return ((LibSvmModel) trainingModel).nativeModel;
 	}
