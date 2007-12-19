@@ -33,7 +33,7 @@ import java.util.Set;
 /**
  * A class to construct a classification problem from features/labels in a table.
  *
- * @author: Fabien Campagne Date: Nov 20, 2007 Time: 5:55:33 PM
+ * @author Fabien Campagne Date: Nov 20, 2007 Time: 5:55:33 PM
  */
 public class LoadClassificationProblem {
 

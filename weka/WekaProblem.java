@@ -27,7 +27,7 @@ import weka.core.Instances;
  */
 
 /**
- * @author: Fabien Campagne Date: Nov 21, 2007 Time: 6:26:40 PM
+ * @author Fabien Campagne Date: Nov 21, 2007 Time: 6:26:40 PM
  */
 public class WekaProblem implements ClassificationProblem {
 	Instances dataset;

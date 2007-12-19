@@ -1,13 +1,6 @@
-package edu.cornell.med.icb.learning.weka;
-
-import edu.mssm.crover.tables.writers.ClassificationModel;
-import it.unimi.dsi.fastutil.io.BinIO;
-
-import java.io.IOException;
 /*
- * Copyright (C) 2001-2002 Mount Sinai School of Medicine
- * Copyright (C) 2003-2007 Institute for Computational Biomedicine,
- *                         Weill Medical College of Cornell University
+ * Copyright (C) 2007 Institute for Computational Biomedicine,
+ *                    Weill Medical College of Cornell University
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,20 +16,28 @@ import java.io.IOException;
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package edu.cornell.med.icb.learning.weka;
+
+import edu.mssm.crover.tables.writers.ClassificationModel;
+import it.unimi.dsi.fastutil.io.BinIO;
+
+import java.io.IOException;
+
 /**
- * @author: Fabien Campagne Date: Nov 23, 2007 Time: 1:29:58 PM
+ * @author Fabien Campagne Date: Nov 23, 2007 Time: 1:29:58 PM
  */
 public class WekaModel extends ClassificationModel {
     WekaClassifier classifier;
 
     public WekaModel(final WekaClassifier wekaClassifier) {
-        classifier=wekaClassifier;
+        classifier = wekaClassifier;
     }
 
     /**
-     * Store the weka model as a serialized object. Not much we can do with it except load it again, but it is not
-     * clear how to save a model into a human-readable format from the Weka API.
-     * @param filename  Filename to use to save the model.
+     * Store the weka model as a serialized object. Not much we can do with it except load it again, but it is not clear
+     * how to save a model into a human-readable format from the Weka API.
+     *
+     * @param filename Filename to use to save the model.
      * @throws IOException
      */
     public void write(final String filename) throws IOException {

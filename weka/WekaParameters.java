@@ -1,11 +1,6 @@
-package edu.cornell.med.icb.learning.weka;
-
-import edu.mssm.crover.tables.writers.ClassificationParameters;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 /*
- * Copyright (C) 2001-2002 Mount Sinai School of Medicine
- * Copyright (C) 2003-2007 Institute for Computational Biomedicine,
- *                         Weill Medical College of Cornell University
+ * Copyright (C) 2007 Institute for Computational Biomedicine,
+ *                    Weill Medical College of Cornell University
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,33 +16,38 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package edu.cornell.med.icb.learning.weka;
+
+import edu.mssm.crover.tables.writers.ClassificationParameters;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+
 /**
- * @author: Fabien Campagne Date: Nov 23, 2007 Time: 1:39:18 PM
+ * @author Fabien Campagne Date: Nov 23, 2007 Time: 1:39:18 PM
  */
 public class WekaParameters extends ClassificationParameters {
-	private ObjectArrayList<String> options = new ObjectArrayList<String>();
+    private ObjectArrayList<String> options = new ObjectArrayList<String>();
 
-	public String getWekaClassifierClassName() {
-		return wekaClassifierClassName;
-	}
+    public String getWekaClassifierClassName() {
+        return wekaClassifierClassName;
+    }
 
-	private String wekaClassifierClassName;
+    private String wekaClassifierClassName;
 
-	public void setParameter(final String parameterName, final double value) {
-		if (value == value) {
-			options.add(parameterName + " " + value);
-		} else {
-			if (parameterName.startsWith("wekaClass=")) {
-				// extract the name of the class that implements the chosen weka classifier.
-				wekaClassifierClassName = parameterName.substring("wekaClass=".length());
-			} else {
-				// value is NaN, parameter is boolean.
-				options.add(parameterName);
-			}
-		}
-	}
+    public void setParameter(final String parameterName, final double value) {
+        if (value == value) {
+            options.add(parameterName + " " + value);
+        } else {
+            if (parameterName.startsWith("wekaClass=")) {
+                // extract the name of the class that implements the chosen weka classifier.
+                wekaClassifierClassName = parameterName.substring("wekaClass=".length());
+            } else {
+                // value is NaN, parameter is boolean.
+                options.add(parameterName);
+            }
+        }
+    }
 
-	public String[] getNative() {
-		return options.toArray(new String[options.size()]);
-	}
+    public String[] getNative() {
+        return options.toArray(new String[options.size()]);
+    }
 }
