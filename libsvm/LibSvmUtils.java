@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2007 Institute for Computational Biomedicine,
- *                    Weill Medical College of Cornell University
+ * Copyright (C) 2007-2008 Institute for Computational Biomedicine,
+ *                         Weill Medical College of Cornell University
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,22 +27,22 @@ import libsvm.svm_parameter;
  */
 public class LibSvmUtils {
 
-	public static double[] calculateWeights(svm_model model) {
-		if (model.param.kernel_type == svm_parameter.LINEAR &&
-				model.param.svm_type == svm_parameter.C_SVC) {
-			int numFeatures = model.SV[0].length;
-			double[] weights = new double[numFeatures];
-			int supportVectorIndex = 0;
-			for (svm_node[] supportVector : model.SV) {
-				double alpha_y = model.sv_coef[0][supportVectorIndex++] * model.label[0];	// alpha * y
-				for (svm_node vectorElement : supportVector) {
+    public static double[] calculateWeights(svm_model model) {
+        if (model.param.kernel_type == svm_parameter.LINEAR &&
+                model.param.svm_type == svm_parameter.C_SVC) {
+            int numFeatures = model.SV[0].length;
+            double[] weights = new double[numFeatures];
+            int supportVectorIndex = 0;
+            for (svm_node[] supportVector : model.SV) {
+                double alpha_y = model.sv_coef[0][supportVectorIndex++] * model.label[0];  // alpha * y
+                for (svm_node vectorElement : supportVector) {
 
-					weights[vectorElement.index] += alpha_y * vectorElement.value;
-				}
-			}
-			return weights;
-		} else {
-			return null;
-		}
-	}
+                    weights[vectorElement.index] += alpha_y * vectorElement.value;
+                }
+            }
+            return weights;
+        } else {
+            return null;
+        }
+    }
 }

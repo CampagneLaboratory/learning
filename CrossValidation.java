@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2001-2002 Mount Sinai School of Medicine
- * Copyright (C) 2003-2007 Institute for Computational Biomedicine,
+ * Copyright (C) 2003-2008 Institute for Computational Biomedicine,
  *                         Weill Medical College of Cornell University
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -43,227 +43,227 @@ import java.util.Collections;
  * @author Fabien Campagne Date: Feb 28, 2006 Time: 3:33:37 PM
  */
 public class CrossValidation {
-	public static Logger log = Logger.getLogger(CrossValidation.class);
+    public static Logger log = Logger.getLogger(CrossValidation.class);
 
-	private ClassificationModel model;
-	Classifier classifier;
-	ClassificationProblem problem;
+    private ClassificationModel model;
+    Classifier classifier;
+    ClassificationProblem problem;
 
-	public CrossValidation(Classifier classifier, ClassificationProblem problem, final RandomEngine randomEngine) {
-		this.classifier = classifier;
-		this.problem = problem;
-		this.randomAdapter = new RandomAdapter(randomEngine);
+    public CrossValidation(Classifier classifier, ClassificationProblem problem, final RandomEngine randomEngine) {
+        this.classifier = classifier;
+        this.problem = problem;
+        this.randomAdapter = new RandomAdapter(randomEngine);
 
-	}
+    }
 
-	public ClassificationModel trainModel() {
-		return classifier.train(problem);
-	}
+    public ClassificationModel trainModel() {
+        return classifier.train(problem);
+    }
 
-	/**
-	 * Initialize the ClassificationModel with a previoulsy trained model.
-	 *
-	 * @param model The ClassificationModel to use from now on.
-	 */
-	public void setModel(final ClassificationModel model) {
-		this.model = model;
-	}
+    /**
+     * Initialize the ClassificationModel with a previoulsy trained model.
+     *
+     * @param model The ClassificationModel to use from now on.
+     */
+    public void setModel(final ClassificationModel model) {
+        this.model = model;
+    }
 
-	/**
-	 * Train SVM on entire training set and report evaluation measures on training set.
-	 *
-	 * @return
-	 */
-	public EvaluationMeasure trainEvaluate() {
-		final ClassificationModel trainingModel = classifier.train(problem);
-		ContingencyTable ctable = new ContingencyTable();
+    /**
+     * Train SVM on entire training set and report evaluation measures on training set.
+     *
+     * @return
+     */
+    public EvaluationMeasure trainEvaluate() {
+        final ClassificationModel trainingModel = classifier.train(problem);
+        ContingencyTable ctable = new ContingencyTable();
 
-		for (int i = 0; i < problem.getSize(); i++) {
-			final double decision =
-					classifier.predict(trainingModel, problem, i);
+        for (int i = 0; i < problem.getSize(); i++) {
+            final double decision =
+                    classifier.predict(trainingModel, problem, i);
 
-			final double trueLabel = problem.getLabel(i);
-			ctable.observeDecision(trueLabel, decision);
+            final double trueLabel = problem.getLabel(i);
+            ctable.observeDecision(trueLabel, decision);
 
-		}
-		ctable.average();
-		return convertToEvalMeasure(ctable);
-	}
+        }
+        ctable.average();
+        return convertToEvalMeasure(ctable);
+    }
 
-	/**
-	 * Report leave-one out evaluation measures for training set.
-	 *
-	 * @return
-	 */
-	public EvaluationMeasure leaveOneOutEvaluation() {
-		ContingencyTable ctable = new ContingencyTable();
-		final double decisionValues[] = new double[problem.getSize()];
-		final double labels[] = new double[problem.getSize()];
+    /**
+     * Report leave-one out evaluation measures for training set.
+     *
+     * @return
+     */
+    public EvaluationMeasure leaveOneOutEvaluation() {
+        ContingencyTable ctable = new ContingencyTable();
+        final double decisionValues[] = new double[problem.getSize()];
+        final double labels[] = new double[problem.getSize()];
 
-		for (int i = 0; i < problem.getSize(); i++) {   // for each training example, leave it out:
+        for (int i = 0; i < problem.getSize(); i++) {   // for each training example, leave it out:
 
-			final ClassificationProblem looProblem = problem.filter(i);
-			final ClassificationModel looModel = classifier.train(looProblem);
-			final double decision = classifier.predict(looModel, problem, i);
-			final double trueLabel = problem.getLabel(i);
-			decisionValues[i] = decision;
-			labels[i] = trueLabel;
-			ctable.observeDecision(trueLabel, decision);
-		}
-		ctable.average();
+            final ClassificationProblem looProblem = problem.filter(i);
+            final ClassificationModel looModel = classifier.train(looProblem);
+            final double decision = classifier.predict(looModel, problem, i);
+            final double trueLabel = problem.getLabel(i);
+            decisionValues[i] = decision;
+            labels[i] = trueLabel;
+            ctable.observeDecision(trueLabel, decision);
+        }
+        ctable.average();
 
-		EvaluationMeasure measure = convertToEvalMeasure(ctable);
-		measure.setRocAuc(areaUnderRocCurveLOO(decisionValues, labels));
-		return measure;
-	}
+        EvaluationMeasure measure = convertToEvalMeasure(ctable);
+        measure.setRocAuc(areaUnderRocCurveLOO(decisionValues, labels));
+        return measure;
+    }
 
-	/**
-	 * Report the area under the Receiver Operating Characteristic (ROC) curve. Estimates are done with a leave one out
-	 * evaluation.
-	 *
-	 * @param decisionValues
-	 * @param labels
-	 * @return ROC AUC
-	 */
-	public static double areaUnderRocCurveLOO(final double[] decisionValues, final double[] labels) {
-		assert decisionValues.length == labels.length : "number of predictions must match number of labels.";
-		for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
-			if (decisionValues[i] < 0) {
-				decisionValues[i] = 0;
-			}
-		}
-		// CALL R ROC
-		try {
-			RConnection connection = new RConnection();
-			connection.assign("predictions", decisionValues);
-			connection.assign("labels", labels);
-			REXP expression = connection.eval(
-					" library(ROCR) \n"
-							+ "pred.svm <- prediction(predictions, labels)\n" +
-							"perf.svm <- performance(pred.svm, 'auc')\n"
-							+ "attr(perf.svm,\"y.values\")[[1]]");	 // attr(perf.rocOutAUC,"y.values")[[1]]
+    /**
+     * Report the area under the Receiver Operating Characteristic (ROC) curve. Estimates are done with a leave one out
+     * evaluation.
+     *
+     * @param decisionValues
+     * @param labels
+     * @return ROC AUC
+     */
+    public static double areaUnderRocCurveLOO(final double[] decisionValues, final double[] labels) {
+        assert decisionValues.length == labels.length : "number of predictions must match number of labels.";
+        for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
+            if (decisionValues[i] < 0) {
+                decisionValues[i] = 0;
+            }
+        }
+        // CALL R ROC
+        try {
+            RConnection connection = new RConnection();
+            connection.assign("predictions", decisionValues);
+            connection.assign("labels", labels);
+            REXP expression = connection.eval(
+                    " library(ROCR) \n"
+                            + "pred.svm <- prediction(predictions, labels)\n" +
+                            "perf.svm <- performance(pred.svm, 'auc')\n"
+                            + "attr(perf.svm,\"y.values\")[[1]]");  // attr(perf.rocOutAUC,"y.values")[[1]]
 
-			double valueROC_AUC = expression.asDouble();
-			//System.out.println("result from R: " + valueROC_AUC);
-			connection.close();
-			return valueROC_AUC;
-		} catch (Exception e) {
-			// connection error or otherwise me
-			log.warn(
-					"Cannot calculate area under the ROC curve. Make sure Rserve (R server) is configured and running.",
-					e);
-			return Double.NaN;
-		}
-	}
+            double valueROC_AUC = expression.asDouble();
+            //System.out.println("result from R: " + valueROC_AUC);
+            connection.close();
+            return valueROC_AUC;
+        } catch (Exception e) {
+            // connection error or otherwise me
+            log.warn(
+                    "Cannot calculate area under the ROC curve. Make sure Rserve (R server) is configured and running.",
+                    e);
+            return Double.NaN;
+        }
+    }
 
-	/*
-			 ContingencyTable ctable = new ContingencyTable();
+    /*
+              ContingencyTable ctable = new ContingencyTable();
 
-			for (int i = 0; i < numberOfTrainingExamples; i++) {   // for each training example, leave it out:
+             for (int i = 0; i < numberOfTrainingExamples; i++) {   // for each training example, leave it out:
 
-				final svm_problem looProblem = splitProblem(problem, i);
-				final svm_model looModel = svm.svm_train(looProblem, parameters);
-				final double decision = svm.svm_predict(looModel, problem.x[i]);
-				final double trueLabel = problem.y[i];
-				decisionValues[i] = decision;
-				labels[i] = trueLabel;
-				ctable.observeDecision(trueLabel, decision);
-			}
-			ctable.average();
-			EvaluationMeasure measure = convertToEvalMeasure(ctable);
-			measure.setRocAuc(areaUnderRocCurveLOO(decisionValues, labels));
-			return measure;
-		  */
+                 final svm_problem looProblem = splitProblem(problem, i);
+                 final svm_model looModel = svm.svm_train(looProblem, parameters);
+                 final double decision = svm.svm_predict(looModel, problem.x[i]);
+                 final double trueLabel = problem.y[i];
+                 decisionValues[i] = decision;
+                 labels[i] = trueLabel;
+                 ctable.observeDecision(trueLabel, decision);
+             }
+             ctable.average();
+             EvaluationMeasure measure = convertToEvalMeasure(ctable);
+             measure.setRocAuc(areaUnderRocCurveLOO(decisionValues, labels));
+             return measure;
+           */
 
-	RandomAdapter randomAdapter;
+    RandomAdapter randomAdapter;
 
-	/**
-	 * Run cross-validation with k folds.
-	 *
-	 * @param k Number of folds for cross validation. Typical values are 5 or 10.
-	 * @param randomEngine Random engine to use when splitting the training set into folds.
-	 * @return Evaluation measures.
-	 */
-	public EvaluationMeasure crossValidation(int k, RandomEngine randomEngine) {
+    /**
+     * Run cross-validation with k folds.
+     *
+     * @param k Number of folds for cross validation. Typical values are 5 or 10.
+     * @param randomEngine Random engine to use when splitting the training set into folds.
+     * @return Evaluation measures.
+     */
+    public EvaluationMeasure crossValidation(int k, RandomEngine randomEngine) {
 
-		this.randomAdapter = new RandomAdapter(randomEngine);
-		return this.crossValidation(k);
-	}
+        this.randomAdapter = new RandomAdapter(randomEngine);
+        return this.crossValidation(k);
+    }
 
-	/**
-	 * Run cross-validation with k folds.
-	 *
-	 * @param k Number of folds for cross validation. Typical values are 5 or 10.
-	 * @return Evaluation measures.
-	 */
-	public EvaluationMeasure crossValidation(int k) {
-		assert k <= problem.getSize() : "Number of folds must be less or equal to number of training examples.";
-		IntList indices = new IntArrayList();
-		for (int f = 0; f < k; ++f) {
-			for (int i = 0; i < problem.getSize() / k; ++i) {
-				indices.add(f);
-			}
-		}
-		Collections.shuffle(indices, randomAdapter);
+    /**
+     * Run cross-validation with k folds.
+     *
+     * @param k Number of folds for cross validation. Typical values are 5 or 10.
+     * @return Evaluation measures.
+     */
+    public EvaluationMeasure crossValidation(int k) {
+        assert k <= problem.getSize() : "Number of folds must be less or equal to number of training examples.";
+        IntList indices = new IntArrayList();
+        for (int f = 0; f < k; ++f) {
+            for (int i = 0; i < problem.getSize() / k; ++i) {
+                indices.add(f);
+            }
+        }
+        Collections.shuffle(indices, randomAdapter);
 
-		int splitIndex[] = new int[problem.getSize()];
-		indices.toArray(splitIndex);
-		DoubleList aucValues = new DoubleArrayList();
-		ContingencyTable ctable = new ContingencyTable();
-		for (int f = 0; f < k; ++f) { // use each fold as test set while the others are the training set:
-			IntSet trainingSet = new IntArraySet();
-			IntSet testSet = new IntArraySet();
-			for (int i = 0; i < problem.getSize(); i++) {   // assign each training example to a fold:
-				if (f == splitIndex[i]) {
-					testSet.add(i);
-				} else {
-					trainingSet.add(i);
-				}
-			}
+        int splitIndex[] = new int[problem.getSize()];
+        indices.toArray(splitIndex);
+        DoubleList aucValues = new DoubleArrayList();
+        ContingencyTable ctable = new ContingencyTable();
+        for (int f = 0; f < k; ++f) { // use each fold as test set while the others are the training set:
+            IntSet trainingSet = new IntArraySet();
+            IntSet testSet = new IntArraySet();
+            for (int i = 0; i < problem.getSize(); i++) {   // assign each training example to a fold:
+                if (f == splitIndex[i]) {
+                    testSet.add(i);
+                } else {
+                    trainingSet.add(i);
+                }
+            }
 
-			final ClassificationProblem currentTrainingSet = problem.filter(trainingSet);
-			final ClassificationModel looModel = classifier.train(currentTrainingSet);
-			ContingencyTable ctableMicro = new ContingencyTable();
+            final ClassificationProblem currentTrainingSet = problem.filter(trainingSet);
+            final ClassificationModel looModel = classifier.train(currentTrainingSet);
+            ContingencyTable ctableMicro = new ContingencyTable();
 
-			final double decisionValues[] = new double[testSet.size()];
-			final double labels[] = new double[testSet.size()];
-			int index = 0;
-			double probs[] = {0d, 0d};
-			for (int testInstanceIndex : testSet) {  // for each test example:
+            final double decisionValues[] = new double[testSet.size()];
+            final double labels[] = new double[testSet.size()];
+            int index = 0;
+            double probs[] = {0d, 0d};
+            for (int testInstanceIndex : testSet) {  // for each test example:
 
-				final double decision = classifier.predict(looModel, problem, testInstanceIndex, probs);
-				final double trueLabel = problem.getLabel(testInstanceIndex);
-				decisionValues[index] = decision;
-				labels[index] = trueLabel;
-				index++;
-				ctable.observeDecision(trueLabel, decision);
-				ctableMicro.observeDecision(trueLabel, decision);
-			}
-			if (log.isDebugEnabled()) {
-				log.debug("decisions: " + ArrayUtils.toString(decisionValues));
-			}
-			if (log.isDebugEnabled()) {
-				log.debug("labels: " + ArrayUtils.toString(labels));
-			}
-			ctableMicro.average();
-			double aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
-			aucValues.add(aucForOneFold);
-		}
-		ctable.average();
+                final double decision = classifier.predict(looModel, problem, testInstanceIndex, probs);
+                final double trueLabel = problem.getLabel(testInstanceIndex);
+                decisionValues[index] = decision;
+                labels[index] = trueLabel;
+                index++;
+                ctable.observeDecision(trueLabel, decision);
+                ctableMicro.observeDecision(trueLabel, decision);
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("decisions: " + ArrayUtils.toString(decisionValues));
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("labels: " + ArrayUtils.toString(labels));
+            }
+            ctableMicro.average();
+            double aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
+            aucValues.add(aucForOneFold);
+        }
+        ctable.average();
 
-		EvaluationMeasure measure = convertToEvalMeasure(ctable);
-		measure.setRocAucValues(aucValues);
-		return measure;
-	}
+        EvaluationMeasure measure = convertToEvalMeasure(ctable);
+        measure.setRocAucValues(aucValues);
+        return measure;
+    }
 
-	private EvaluationMeasure convertToEvalMeasure(ContingencyTable ctable) {
-		return new EvaluationMeasure(ctable);
-	}
+    private EvaluationMeasure convertToEvalMeasure(ContingencyTable ctable) {
+        return new EvaluationMeasure(ctable);
+    }
 
 
-	public ClassificationModel getModel() {
-		return model;
-	}
+    public ClassificationModel getModel() {
+        return model;
+    }
 
 
 }

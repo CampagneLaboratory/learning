@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2007 Institute for Computational Biomedicine,
- *                    Weill Medical College of Cornell University
+ * Copyright (C) 2007-2008 Institute for Computational Biomedicine,
+ *                         Weill Medical College of Cornell University
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ public class WekaClassifier implements Classifier {
         instanciateClassifier();
         try {
             delegate.setOptions(defaultParameters.getNative());
-//			System.out.println("weka Problem: "+getWekaProblem(problem));
+            // System.out.println("weka Problem: "+getWekaProblem(problem));
             delegate.buildClassifier(getWekaProblem(problem));
             return new WekaModel(this);
         } catch (Exception e) {
