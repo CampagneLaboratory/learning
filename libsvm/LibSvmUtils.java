@@ -27,15 +27,15 @@ import libsvm.svm_parameter;
  */
 public class LibSvmUtils {
 
-    public static double[] calculateWeights(svm_model model) {
+    public static double[] calculateWeights(final svm_model model) {
         if (model.param.kernel_type == svm_parameter.LINEAR &&
                 model.param.svm_type == svm_parameter.C_SVC) {
-            int numFeatures = model.SV[0].length;
-            double[] weights = new double[numFeatures];
+            final int numFeatures = model.SV[0].length;
+            final double[] weights = new double[numFeatures];
             int supportVectorIndex = 0;
-            for (svm_node[] supportVector : model.SV) {
-                double alpha_y = model.sv_coef[0][supportVectorIndex++] * model.label[0];  // alpha * y
-                for (svm_node vectorElement : supportVector) {
+            for (final svm_node[] supportVector : model.SV) {
+                final double alpha_y = model.sv_coef[0][supportVectorIndex++] * model.label[0];  // alpha * y
+                for (final svm_node vectorElement : supportVector) {
 
                     weights[vectorElement.index] += alpha_y * vectorElement.value;
                 }

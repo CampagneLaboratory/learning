@@ -38,7 +38,7 @@ public class LibSvmClassifier implements Classifier {
     }
 
     public ClassificationModel train(final ClassificationProblem problem) {
-        svm_problem nativeProblem = getNativeProblem(problem);
+        final svm_problem nativeProblem = getNativeProblem(problem);
         return new LibSvmModel(svm.svm_train(nativeProblem, parameters.getNative()));
     }
 
@@ -54,7 +54,7 @@ public class LibSvmClassifier implements Classifier {
     }
 
     public double predict(final ClassificationModel trainingModel, final ClassificationProblem problem,
-                          final int instanceIndex, double[] probabilities) {
+                          final int instanceIndex, final double[] probabilities) {
 
         return svm.svm_predict_probability(getNativeModel(trainingModel),
                 getNativeProblem(problem).x[instanceIndex],
@@ -78,12 +78,12 @@ public class LibSvmClassifier implements Classifier {
         return new LibSvmProblem();
     }
 
-    public ClassificationModel train(ClassificationProblem problem, ClassificationParameters parameters) {
+    public ClassificationModel train(final ClassificationProblem problem, final ClassificationParameters parameters) {
         setParameters(parameters);
         return this.train(problem);
     }
 
-    public void setParameters(ClassificationParameters parameters) {
+    public void setParameters(final ClassificationParameters parameters) {
         assert parameters instanceof LibSvmParameters;
         this.parameters = (LibSvmParameters) parameters;
     }

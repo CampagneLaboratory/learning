@@ -49,7 +49,7 @@ public class CrossValidation {
     Classifier classifier;
     ClassificationProblem problem;
 
-    public CrossValidation(Classifier classifier, ClassificationProblem problem, final RandomEngine randomEngine) {
+    public CrossValidation(final Classifier classifier, final ClassificationProblem problem, final RandomEngine randomEngine) {
         this.classifier = classifier;
         this.problem = problem;
         this.randomAdapter = new RandomAdapter(randomEngine);
@@ -76,7 +76,7 @@ public class CrossValidation {
      */
     public EvaluationMeasure trainEvaluate() {
         final ClassificationModel trainingModel = classifier.train(problem);
-        ContingencyTable ctable = new ContingencyTable();
+        final ContingencyTable ctable = new ContingencyTable();
 
         for (int i = 0; i < problem.getSize(); i++) {
             final double decision =
@@ -96,7 +96,7 @@ public class CrossValidation {
      * @return
      */
     public EvaluationMeasure leaveOneOutEvaluation() {
-        ContingencyTable ctable = new ContingencyTable();
+        final ContingencyTable ctable = new ContingencyTable();
         final double decisionValues[] = new double[problem.getSize()];
         final double labels[] = new double[problem.getSize()];
 
@@ -112,7 +112,7 @@ public class CrossValidation {
         }
         ctable.average();
 
-        EvaluationMeasure measure = convertToEvalMeasure(ctable);
+        final EvaluationMeasure measure = convertToEvalMeasure(ctable);
         measure.setRocAuc(areaUnderRocCurveLOO(decisionValues, labels));
         return measure;
     }
@@ -134,16 +134,16 @@ public class CrossValidation {
         }
         // CALL R ROC
         try {
-            RConnection connection = new RConnection();
+            final RConnection connection = new RConnection();
             connection.assign("predictions", decisionValues);
             connection.assign("labels", labels);
-            REXP expression = connection.eval(
+            final REXP expression = connection.eval(
                     " library(ROCR) \n"
                             + "pred.svm <- prediction(predictions, labels)\n" +
                             "perf.svm <- performance(pred.svm, 'auc')\n"
                             + "attr(perf.svm,\"y.values\")[[1]]");  // attr(perf.rocOutAUC,"y.values")[[1]]
 
-            double valueROC_AUC = expression.asDouble();
+            final double valueROC_AUC = expression.asDouble();
             //System.out.println("result from R: " + valueROC_AUC);
             connection.close();
             return valueROC_AUC;
@@ -184,7 +184,7 @@ public class CrossValidation {
      * @param randomEngine Random engine to use when splitting the training set into folds.
      * @return Evaluation measures.
      */
-    public EvaluationMeasure crossValidation(int k, RandomEngine randomEngine) {
+    public EvaluationMeasure crossValidation(final int k, final RandomEngine randomEngine) {
 
         this.randomAdapter = new RandomAdapter(randomEngine);
         return this.crossValidation(k);
@@ -196,9 +196,9 @@ public class CrossValidation {
      * @param k Number of folds for cross validation. Typical values are 5 or 10.
      * @return Evaluation measures.
      */
-    public EvaluationMeasure crossValidation(int k) {
+    public EvaluationMeasure crossValidation(final int k) {
         assert k <= problem.getSize() : "Number of folds must be less or equal to number of training examples.";
-        IntList indices = new IntArrayList();
+        final IntList indices = new IntArrayList();
         for (int f = 0; f < k; ++f) {
             for (int i = 0; i < problem.getSize() / k; ++i) {
                 indices.add(f);
@@ -206,13 +206,13 @@ public class CrossValidation {
         }
         Collections.shuffle(indices, randomAdapter);
 
-        int splitIndex[] = new int[problem.getSize()];
+        final int[] splitIndex = new int[problem.getSize()];
         indices.toArray(splitIndex);
-        DoubleList aucValues = new DoubleArrayList();
-        ContingencyTable ctable = new ContingencyTable();
+        final DoubleList aucValues = new DoubleArrayList();
+        final ContingencyTable ctable = new ContingencyTable();
         for (int f = 0; f < k; ++f) { // use each fold as test set while the others are the training set:
-            IntSet trainingSet = new IntArraySet();
-            IntSet testSet = new IntArraySet();
+            final IntSet trainingSet = new IntArraySet();
+            final IntSet testSet = new IntArraySet();
             for (int i = 0; i < problem.getSize(); i++) {   // assign each training example to a fold:
                 if (f == splitIndex[i]) {
                     testSet.add(i);
@@ -223,13 +223,13 @@ public class CrossValidation {
 
             final ClassificationProblem currentTrainingSet = problem.filter(trainingSet);
             final ClassificationModel looModel = classifier.train(currentTrainingSet);
-            ContingencyTable ctableMicro = new ContingencyTable();
+            final ContingencyTable ctableMicro = new ContingencyTable();
 
             final double decisionValues[] = new double[testSet.size()];
             final double labels[] = new double[testSet.size()];
             int index = 0;
-            double probs[] = {0d, 0d};
-            for (int testInstanceIndex : testSet) {  // for each test example:
+            final double[] probs = {0d, 0d};
+            for (final int testInstanceIndex : testSet) {  // for each test example:
 
                 final double decision = classifier.predict(looModel, problem, testInstanceIndex, probs);
                 final double trueLabel = problem.getLabel(testInstanceIndex);
@@ -246,17 +246,17 @@ public class CrossValidation {
                 log.debug("labels: " + ArrayUtils.toString(labels));
             }
             ctableMicro.average();
-            double aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
+            final double aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
             aucValues.add(aucForOneFold);
         }
         ctable.average();
 
-        EvaluationMeasure measure = convertToEvalMeasure(ctable);
+        final EvaluationMeasure measure = convertToEvalMeasure(ctable);
         measure.setRocAucValues(aucValues);
         return measure;
     }
 
-    private EvaluationMeasure convertToEvalMeasure(ContingencyTable ctable) {
+    private EvaluationMeasure convertToEvalMeasure(final ContingencyTable ctable) {
         return new EvaluationMeasure(ctable);
     }
 

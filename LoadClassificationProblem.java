@@ -83,7 +83,7 @@ public class LoadClassificationProblem {
         groupToCodedLabel.put(labelGroup0, -1);
         groupToCodedLabel.put(labelGroup1, 1);
 
-        RowProcessor rowProcessor = new RowProcessor(RowProcessor.buildColumnIndices(table, null)) {
+        final RowProcessor rowProcessor = new RowProcessor(RowProcessor.buildColumnIndices(table, null)) {
 
             public void processRow(final Table table, final Table.RowIterator ri)
                     throws TypeMismatchException, InvalidColumnException {
@@ -101,7 +101,7 @@ public class LoadClassificationProblem {
 
 
                 final int numberOfFeatures = columnIndices.length - 1;
-                int instanceIndex = problem.addInstance(numberOfFeatures);
+                final int instanceIndex = problem.addInstance(numberOfFeatures);
                 problem.setLabel(instanceIndex, label);
 
                 int featureIndex = 1;

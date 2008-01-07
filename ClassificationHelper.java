@@ -35,9 +35,9 @@ public class ClassificationHelper {
 
     public void parseParameters(final Classifier classifier, final String[] classifierParameters) {
 
-        for (String parameter : classifierParameters) {
-            double value = getParameterValue(parameter);
-            String key = getParameterKey(parameter);
+        for (final String parameter : classifierParameters) {
+            final double value = getParameterValue(parameter);
+            final String key = getParameterKey(parameter);
             System.out.println("Setting parameter " + parameter);
             classifier.getParameters().setParameter(key, value);
             this.parameters=classifier.getParameters();
@@ -45,7 +45,7 @@ public class ClassificationHelper {
     }
 
     private double getParameterValue(final String parameter) {
-        String[] tokens = parameter.split("[=]");
+        final String[] tokens = parameter.split("[=]");
         double value = Double.NaN;
         if (tokens.length == 2) {
             try {
@@ -59,7 +59,7 @@ public class ClassificationHelper {
     }
 
     private String getParameterKey(final String parameter) {
-        String[] tokens = parameter.split("[=]");
+        final String[] tokens = parameter.split("[=]");
         if (tokens.length == 2) {
             try {
                 Double.parseDouble(tokens[1]);

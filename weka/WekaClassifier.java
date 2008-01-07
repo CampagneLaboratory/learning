@@ -41,7 +41,7 @@ public class WekaClassifier implements Classifier {
         this.defaultParameters = new WekaParameters();
     }
 
-    public void setParameters(ClassificationParameters parameters) {
+    public void setParameters(final ClassificationParameters parameters) {
         assert parameters instanceof WekaParameters : "parameters must be Weka parameters.";
         this.defaultParameters = (WekaParameters) parameters;
     }
@@ -50,11 +50,11 @@ public class WekaClassifier implements Classifier {
         defaultParameters = new WekaParameters();
     }
 
-    public ClassificationProblem newProblem(int size) {
+    public ClassificationProblem newProblem(final int size) {
         return new WekaProblem();
     }
 
-    public ClassificationModel train(ClassificationProblem problem, ClassificationParameters parameters) {
+    public ClassificationModel train(final ClassificationProblem problem, final ClassificationParameters parameters) {
         defaultParameters = getWekaParameters(parameters);
         instanciateClassifier();
         try {
@@ -73,9 +73,9 @@ public class WekaClassifier implements Classifier {
 
         if (delegate == null) {
             try {
-                Class clazz = Class.forName(wekaClassifierClassName);
+                final Class clazz = Class.forName(wekaClassifierClassName);
 
-                Object newInstance = clazz.newInstance();
+                final Object newInstance = clazz.newInstance();
                 assert newInstance instanceof weka.classifiers.Classifier : "weka classifier must implement weka.classifiers.Classifier";
                 delegate = (weka.classifiers.Classifier) newInstance;
             } catch (ClassNotFoundException e) {
@@ -90,7 +90,7 @@ public class WekaClassifier implements Classifier {
         assert delegate != null : "Could not instance weka classifier for class name=" + wekaClassifierClassName;
     }
 
-    public ClassificationModel train(ClassificationProblem problem) {
+    public ClassificationModel train(final ClassificationProblem problem) {
         return train(problem, defaultParameters);
     }
 
@@ -112,10 +112,10 @@ public class WekaClassifier implements Classifier {
     }
 
     public double predict(final ClassificationModel trainingModel, final ClassificationProblem problem,
-                          final int instanceIndex, double[] probabilities) {
+                          final int instanceIndex, final double[] probabilities) {
         assert trainingModel instanceof WekaModel : "Model must be a weka model.";
         try {
-            double[] probs
+            final double[] probs
                     = getWekaClassifier(this, trainingModel)
                     .distributionForInstance(getWekaProblem(problem).instance(instanceIndex));
             System.arraycopy(probs, 0, probabilities, 0, probs.length);

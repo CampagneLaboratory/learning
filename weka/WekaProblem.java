@@ -72,22 +72,22 @@ public class WekaProblem implements ClassificationProblem {
         return new WekaProblem(this, allButOne);
     }
 
-    public void setInstance(int instanceIndex, double label, double features[]) {
+    public void setInstance(final int instanceIndex, final double label, final double[] features) {
         setLabel(instanceIndex, label);
         for (int featureIndex = 0; featureIndex < features.length; featureIndex++) {
-            double featureValue = features[featureIndex];
+            final double featureValue = features[featureIndex];
             setFeature(instanceIndex, featureIndex, featureValue);
         }
 
     }
 
-    public void setLabel(int instanceIndex, double label) {
+    public void setLabel(final int instanceIndex, final double label) {
         dataset.instance(instanceIndex)
                 .setValue(dataset.attribute(labelIndex), label == 1 ? "positiveClass" : "negativeClass");
     }
 
     public void setFeature(final int instanceIndex, final int featureIndex, final double featureValue) {
-        Instance instance = dataset.instance(instanceIndex);
+        final Instance instance = dataset.instance(instanceIndex);
         instance.setValue(featureIndex + 1, featureValue);
     }
 
@@ -108,11 +108,11 @@ public class WekaProblem implements ClassificationProblem {
             final FastVector labelValues = new FastVector(2); // two classes
             labelValues.addElement("negativeClass");
             labelValues.addElement("positiveClass");
-            Attribute labelAttribute = new Attribute("label", labelValues, 0);
+            final Attribute labelAttribute = new Attribute("label", labelValues, 0);
             attributes = new FastVector();
             attributes.addElement(labelAttribute);
             for (int i = 0; i < maxNumberOfFeatures; i++) {
-                Attribute attribute = new Attribute("feature" + i, i + 1);
+                final Attribute attribute = new Attribute("feature" + i, i + 1);
                 attributes.addElement(attribute);
             }
             dataset = new Instances(this.toString(), (FastVector) attributes.copy(), 0);
