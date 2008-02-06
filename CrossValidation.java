@@ -36,6 +36,7 @@ import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.Rserve.RConnection;
 
 import java.util.Collections;
+import java.io.File;
 
 /**
  * Performs cross-validation for a configurable classifier.
@@ -49,7 +50,8 @@ public class CrossValidation {
     Classifier classifier;
     ClassificationProblem problem;
 
-    public CrossValidation(final Classifier classifier, final ClassificationProblem problem, final RandomEngine randomEngine) {
+    public CrossValidation(final Classifier classifier, final ClassificationProblem problem,
+                           final RandomEngine randomEngine) {
         this.classifier = classifier;
         this.problem = problem;
         this.randomAdapter = new RandomAdapter(randomEngine);
@@ -156,24 +158,76 @@ public class CrossValidation {
         }
     }
 
+    /**
+     * Report the area under the Receiver Operating Characteristic (ROC) curve. Estimates are done with a leave one out
+     * evaluation.
+     *
+     * @param decisionValues Decision values output by classifier. Larger values indicate more confidence in prediction
+     * of a positive label.
+     * @param labels Correct label for item, can be 0 (negative class) or +1 (positive class).
+     * @return rocCurvefilename where a PDF of the ROC curve has been written.
+     */
+    public static void plotRocCurveLOO(final double[] decisionValues, final double[] labels, String rocCurvefilename) {
+        assert decisionValues.length == labels.length : "number of predictions must match number of labels.";
+        for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
+            if (decisionValues[i] < 0) {
+                decisionValues[i] = 0;
+            }
+        }
+        // CALL R ROC
+        try {
+            // R server only understands unix style path. Convert windows to unix if needed:
+            String filename= rocCurvefilename.replaceAll("[\\\\]","/");
+       //     System.out.println("filename: "+filename);
+                     File deleteThis=new File(filename);
+            if (deleteThis.exists()) {
+                deleteThis.delete();
+            }
+            final RConnection connection = new RConnection();
+            connection.assign("predictions", decisionValues);
+            connection.assign("labels", labels);
+            final String cmd = " library(ROCR) \n"
+                    + "pred.svm <- prediction(predictions, labels)\n" +
+                    "pdf(\"" + filename+"\", height=5, width=5)\n" +
+
+                    "perf <- performance(pred.svm, measure = \"tpr\", x.measure = \"fpr\")\n" +
+                    "plot(perf)\n" +
+                    "dev.off()";
+          
+            final REXP expression = connection.eval(
+                    cmd);  // attr(perf.rocOutAUC,"y.values")[[1]]
+
+            final double valueROC_AUC = expression.asDouble();
+            //System.out.println("result from R: " + valueROC_AUC);
+            connection.close();
+
+        } catch (Exception e) {
+            // connection error or otherwise me
+            log.warn(
+                    "Cannot plot ROC curve. Make sure Rserve (R server) is configured and running.",
+                    e);
+
+        }
+    }
+
     /*
-              ContingencyTable ctable = new ContingencyTable();
+       ContingencyTable ctable = new ContingencyTable();
 
-             for (int i = 0; i < numberOfTrainingExamples; i++) {   // for each training example, leave it out:
+      for (int i = 0; i < numberOfTrainingExamples; i++) {   // for each training example, leave it out:
 
-                 final svm_problem looProblem = splitProblem(problem, i);
-                 final svm_model looModel = svm.svm_train(looProblem, parameters);
-                 final double decision = svm.svm_predict(looModel, problem.x[i]);
-                 final double trueLabel = problem.y[i];
-                 decisionValues[i] = decision;
-                 labels[i] = trueLabel;
-                 ctable.observeDecision(trueLabel, decision);
-             }
-             ctable.average();
-             EvaluationMeasure measure = convertToEvalMeasure(ctable);
-             measure.setRocAuc(areaUnderRocCurveLOO(decisionValues, labels));
-             return measure;
-           */
+          final svm_problem looProblem = splitProblem(problem, i);
+          final svm_model looModel = svm.svm_train(looProblem, parameters);
+          final double decision = svm.svm_predict(looModel, problem.x[i]);
+          final double trueLabel = problem.y[i];
+          decisionValues[i] = decision;
+          labels[i] = trueLabel;
+          ctable.observeDecision(trueLabel, decision);
+      }
+      ctable.average();
+      EvaluationMeasure measure = convertToEvalMeasure(ctable);
+      measure.setRocAuc(areaUnderRocCurveLOO(decisionValues, labels));
+      return measure;
+    */
 
     RandomAdapter randomAdapter;
 
