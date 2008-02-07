@@ -24,6 +24,7 @@ import edu.mssm.crover.tables.writers.ClassificationModel;
 import edu.mssm.crover.tables.writers.ContingencyTable;
 import edu.mssm.crover.tables.writers.RandomAdapter;
 import edu.mssm.crover.tools.svmlight.EvaluationMeasure;
+import edu.cornell.med.icb.R.RConnectionPool;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -34,6 +35,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.Rserve.RConnection;
+import org.rosuda.REngine.Rserve.RserveException;
 
 import java.util.Collections;
 import java.io.File;
@@ -44,7 +46,7 @@ import java.io.File;
  * @author Fabien Campagne Date: Feb 28, 2006 Time: 3:33:37 PM
  */
 public class CrossValidation {
-    public static Logger log = Logger.getLogger(CrossValidation.class);
+    private static final Logger LOG = Logger.getLogger(CrossValidation.class);
 
     private ClassificationModel model;
     Classifier classifier;
@@ -99,8 +101,8 @@ public class CrossValidation {
      */
     public EvaluationMeasure leaveOneOutEvaluation() {
         final ContingencyTable ctable = new ContingencyTable();
-        final double decisionValues[] = new double[problem.getSize()];
-        final double labels[] = new double[problem.getSize()];
+        final double[] decisionValues = new double[problem.getSize()];
+        final double[] labels = new double[problem.getSize()];
 
         for (int i = 0; i < problem.getSize(); i++) {   // for each training example, leave it out:
 
@@ -134,9 +136,13 @@ public class CrossValidation {
                 decisionValues[i] = 0;
             }
         }
+
+        final RConnectionPool connectionPool = RConnectionPool.getInstance();
+        RConnection connection = null;
+
         // CALL R ROC
         try {
-            final RConnection connection = new RConnection();
+            connection = connectionPool.borrowConnection();
             connection.assign("predictions", decisionValues);
             connection.assign("labels", labels);
             final REXP expression = connection.eval(
@@ -147,14 +153,21 @@ public class CrossValidation {
 
             final double valueROC_AUC = expression.asDouble();
             //System.out.println("result from R: " + valueROC_AUC);
-            connection.close();
             return valueROC_AUC;
         } catch (Exception e) {
             // connection error or otherwise me
-            log.warn(
+            LOG.warn(
                     "Cannot calculate area under the ROC curve. Make sure Rserve (R server) is configured and running.",
                     e);
             return Double.NaN;
+        } finally {
+            if (connection != null) {
+                try {
+                    connectionPool.returnConnection(connection);
+                } catch (RserveException e) {
+                    LOG.warn("Couldn't return connection to the pool", e);
+                }
+            }
         }
     }
 
@@ -167,46 +180,55 @@ public class CrossValidation {
      * @param labels Correct label for item, can be 0 (negative class) or +1 (positive class).
      * @return rocCurvefilename where a PDF of the ROC curve has been written.
      */
-    public static void plotRocCurveLOO(final double[] decisionValues, final double[] labels, String rocCurvefilename) {
+    public static void plotRocCurveLOO(final double[] decisionValues, final double[] labels, final String rocCurvefilename) {
         assert decisionValues.length == labels.length : "number of predictions must match number of labels.";
         for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
             if (decisionValues[i] < 0) {
                 decisionValues[i] = 0;
             }
         }
+
+        final RConnectionPool connectionPool = RConnectionPool.getInstance();
+        RConnection connection = null;
+
         // CALL R ROC
         try {
             // R server only understands unix style path. Convert windows to unix if needed:
-            String filename= rocCurvefilename.replaceAll("[\\\\]","/");
-       //     System.out.println("filename: "+filename);
-                     File deleteThis=new File(filename);
+            final String filename = rocCurvefilename.replaceAll("[\\\\]", "/");
+            //     System.out.println("filename: "+filename);
+            final File deleteThis = new File(filename);
             if (deleteThis.exists()) {
                 deleteThis.delete();
             }
-            final RConnection connection = new RConnection();
+
+            connection = connectionPool.borrowConnection();
             connection.assign("predictions", decisionValues);
             connection.assign("labels", labels);
             final String cmd = " library(ROCR) \n"
                     + "pred.svm <- prediction(predictions, labels)\n" +
                     "pdf(\"" + filename+"\", height=5, width=5)\n" +
-
                     "perf <- performance(pred.svm, measure = \"tpr\", x.measure = \"fpr\")\n" +
                     "plot(perf)\n" +
                     "dev.off()";
-          
+
             final REXP expression = connection.eval(
                     cmd);  // attr(perf.rocOutAUC,"y.values")[[1]]
 
             final double valueROC_AUC = expression.asDouble();
             //System.out.println("result from R: " + valueROC_AUC);
-            connection.close();
-
         } catch (Exception e) {
             // connection error or otherwise me
-            log.warn(
+            LOG.warn(
                     "Cannot plot ROC curve. Make sure Rserve (R server) is configured and running.",
                     e);
-
+        } finally {
+            if (connection != null) {
+                try {
+                    connectionPool.returnConnection(connection);
+                } catch (RserveException e) {
+                    LOG.warn("Couldn't return connection to the pool", e);
+                }
+            }
         }
     }
 
@@ -279,8 +301,8 @@ public class CrossValidation {
             final ClassificationModel looModel = classifier.train(currentTrainingSet);
             final ContingencyTable ctableMicro = new ContingencyTable();
 
-            final double decisionValues[] = new double[testSet.size()];
-            final double labels[] = new double[testSet.size()];
+            final double[] decisionValues = new double[testSet.size()];
+            final double[] labels = new double[testSet.size()];
             int index = 0;
             final double[] probs = {0d, 0d};
             for (final int testInstanceIndex : testSet) {  // for each test example:
@@ -293,11 +315,11 @@ public class CrossValidation {
                 ctable.observeDecision(trueLabel, decision);
                 ctableMicro.observeDecision(trueLabel, decision);
             }
-            if (log.isDebugEnabled()) {
-                log.debug("decisions: " + ArrayUtils.toString(decisionValues));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("decisions: " + ArrayUtils.toString(decisionValues));
             }
-            if (log.isDebugEnabled()) {
-                log.debug("labels: " + ArrayUtils.toString(labels));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("labels: " + ArrayUtils.toString(labels));
             }
             ctableMicro.average();
             final double aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
