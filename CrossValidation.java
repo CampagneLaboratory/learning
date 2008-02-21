@@ -130,6 +130,8 @@ public class CrossValidation {
      */
     public static double areaUnderRocCurveLOO(final double[] decisionValues, final double[] labels) {
         assert decisionValues.length == labels.length : "number of predictions must match number of labels.";
+        double decisionSingleVal = decisionValues[0];
+        double labelsSingleVal = labels[0];
         for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
             if (decisionValues[i] < 0) {
                 decisionValues[i] = 0;
@@ -137,6 +139,27 @@ public class CrossValidation {
             if (labels[i] < 0) {
                 labels[i] = 0;
             }
+            if ((labelsSingleVal != Double.MIN_VALUE) && (labels[i] != labelsSingleVal)) {
+                labelsSingleVal = Double.MIN_VALUE;
+            }
+            if ((decisionSingleVal != Double.MIN_VALUE) && (decisionValues[i] != decisionSingleVal)) {
+                decisionSingleVal = Double.MIN_VALUE;
+            }
+        }
+        if ((labelsSingleVal != Double.MIN_VALUE) && (decisionSingleVal != Double.MIN_VALUE)) {
+            double shortCircuitValue;
+            if (labelsSingleVal == decisionSingleVal) {
+                shortCircuitValue = 1.0d;
+            } else {
+                shortCircuitValue = 0.5d;
+            }
+            if (LOG.isDebugEnabled()) {
+                String debugStr = String.format("++ Short circuit, same values "
+                    + "(label=%f's, decisionValues=%f's) returning %f",
+                    labelsSingleVal, decisionSingleVal, shortCircuitValue);
+                LOG.debug(debugStr);
+            }
+            return shortCircuitValue;
         }
 
         final RConnectionPool connectionPool = RConnectionPool.getInstance();
@@ -153,11 +176,13 @@ public class CrossValidation {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("transformed labels: " + ArrayUtils.toString(labels));
             }*/
-            final REXP expression = connection.eval(
-                    "library(ROCR) \n"
-                            + "pred.svm <- prediction(predictions, factor(labels,c(0,1)))\n" +
-                            "perf.svm <- performance(pred.svm, 'auc')\n"
-                            + "attr(perf.svm,\"y.values\")[[1]]");  // attr(perf.rocOutAUC,"y.values")[[1]]
+            StringBuffer rCommand = new StringBuffer();
+            rCommand.append("library(ROCR)\n");
+            rCommand.append("flabels <- factor(labels,c(0,1))\n");
+            rCommand.append("pred.svm <- prediction(predictions, flabels)\n");
+            rCommand.append("perf.svm <- performance(pred.svm, 'auc')\n");
+            rCommand.append("attr(perf.svm,\"y.values\")[[1]]");  // attr(perf.rocOutAUC,"y.values")[[1]]\
+            final REXP expression = connection.eval(rCommand.toString());
 
             final double valueROC_AUC = expression.asDouble();
             //System.out.println("result from R: " + valueROC_AUC);
@@ -216,11 +241,11 @@ public class CrossValidation {
             connection.assign("predictions", decisionValues);
             connection.assign("labels", labels);
             final String cmd = " library(ROCR) \n"
-                    + "pred.svm <- prediction(predictions, labels)\n" +
-                    "pdf(\"" + filename + "\", height=5, width=5)\n" +
-                    "perf <- performance(pred.svm, measure = \"tpr\", x.measure = \"fpr\")\n" +
-                    "plot(perf)\n" +
-                    "dev.off()";
+                    + "pred.svm <- prediction(predictions, labels)\n"
+                    + "pdf(\"" + filename + "\", height=5, width=5)\n"
+                    + "perf <- performance(pred.svm, measure = \"tpr\", x.measure = \"fpr\")\n"
+                    + "plot(perf)\n"
+                    + "dev.off()";
 
             final REXP expression = connection.eval(
                     cmd);  // attr(perf.rocOutAUC,"y.values")[[1]]
