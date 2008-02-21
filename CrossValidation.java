@@ -155,7 +155,7 @@ public class CrossValidation {
             }*/
             final REXP expression = connection.eval(
                     "library(ROCR) \n"
-                            + "pred.svm <- prediction(predictions, labels)\n" +
+                            + "pred.svm <- prediction(predictions, factor(labels,c(0,1)))\n" +
                             "perf.svm <- performance(pred.svm, 'auc')\n"
                             + "attr(perf.svm,\"y.values\")[[1]]");  // attr(perf.rocOutAUC,"y.values")[[1]]
 
