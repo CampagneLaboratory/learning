@@ -57,7 +57,6 @@ public class CrossValidation {
         this.classifier = classifier;
         this.problem = problem;
         this.randomAdapter = new RandomAdapter(randomEngine);
-
     }
 
     public ClassificationModel trainModel() {
@@ -135,6 +134,9 @@ public class CrossValidation {
             if (decisionValues[i] < 0) {
                 decisionValues[i] = 0;
             }
+            if (labels[i] < 0) {
+                labels[i] = 0;
+            }
         }
 
         final RConnectionPool connectionPool = RConnectionPool.getInstance();
@@ -145,8 +147,14 @@ public class CrossValidation {
             connection = connectionPool.borrowConnection();
             connection.assign("predictions", decisionValues);
             connection.assign("labels", labels);
+         /*   if (LOG.isDebugEnabled()) {
+                LOG.debug("transformed decisions: " + ArrayUtils.toString(decisionValues));
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("transformed labels: " + ArrayUtils.toString(labels));
+            }*/
             final REXP expression = connection.eval(
-                    " library(ROCR) \n"
+                    "library(ROCR) \n"
                             + "pred.svm <- prediction(predictions, labels)\n" +
                             "perf.svm <- performance(pred.svm, 'auc')\n"
                             + "attr(perf.svm,\"y.values\")[[1]]");  // attr(perf.rocOutAUC,"y.values")[[1]]
@@ -176,8 +184,8 @@ public class CrossValidation {
      * evaluation.
      *
      * @param decisionValues Decision values output by classifier. Larger values indicate more confidence in prediction
-     * of a positive label.
-     * @param labels Correct label for item, can be 0 (negative class) or +1 (positive class).
+     *                       of a positive label.
+     * @param labels         Correct label for item, can be 0 (negative class) or +1 (positive class).
      * @return rocCurvefilename where a PDF of the ROC curve has been written.
      */
     public static void plotRocCurveLOO(final double[] decisionValues, final double[] labels, final String rocCurvefilename) {
@@ -185,6 +193,9 @@ public class CrossValidation {
         for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
             if (decisionValues[i] < 0) {
                 decisionValues[i] = 0;
+            }
+            if (labels[i] < 0) {
+                labels[i] = 0;
             }
         }
 
@@ -206,7 +217,7 @@ public class CrossValidation {
             connection.assign("labels", labels);
             final String cmd = " library(ROCR) \n"
                     + "pred.svm <- prediction(predictions, labels)\n" +
-                    "pdf(\"" + filename+"\", height=5, width=5)\n" +
+                    "pdf(\"" + filename + "\", height=5, width=5)\n" +
                     "perf <- performance(pred.svm, measure = \"tpr\", x.measure = \"fpr\")\n" +
                     "plot(perf)\n" +
                     "dev.off()";
@@ -256,7 +267,7 @@ public class CrossValidation {
     /**
      * Run cross-validation with k folds.
      *
-     * @param k Number of folds for cross validation. Typical values are 5 or 10.
+     * @param k            Number of folds for cross validation. Typical values are 5 or 10.
      * @param randomEngine Random engine to use when splitting the training set into folds.
      * @return Evaluation measures.
      */
@@ -275,11 +286,11 @@ public class CrossValidation {
     public EvaluationMeasure crossValidation(final int k) {
         assert k <= problem.getSize() : "Number of folds must be less or equal to number of training examples.";
         final IntList indices = new IntArrayList();
-        for (int f = 0; f < k; ++f) {
-            for (int i = 0; i < problem.getSize() / k; ++i) {
-                indices.add(f);
+          for (int i = 0; i < problem.getSize() ; ++i) {
+       //         System.out.println("Assigning instance "+i+ " to fold "+(i % k));
+                indices.add(i % k);
             }
-        }
+
         Collections.shuffle(indices, randomAdapter);
 
         final int[] splitIndex = new int[problem.getSize()];
