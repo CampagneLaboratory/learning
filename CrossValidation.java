@@ -40,8 +40,6 @@ import org.rosuda.REngine.Rserve.RserveException;
 import java.util.Collections;
 import java.io.File;
 
-import auc.Confusion;
-
 /**
  * Performs cross-validation for a configurable classifier.
  *
@@ -133,42 +131,8 @@ public class CrossValidation {
      */
     public static double areaUnderRocCurveLOO(final double[] decisionValues, final double[] labels) {
 
-        assert decisionValues.length == labels.length : "number of predictions must match number of labels.";
-        double decisionSingleVal = decisionValues[0];
-
-        /*
-             Alternative with AUC Calculator (java implementation from See http://pages.cs.wisc.edu/~richm/programs/AUC/
-             does not work on some evaluations:
-DEBUG LibSvmClassifier     - decision values: {0.5996471249422233,0.4003528750577767}
-DEBUG CrossValidation      - decisions: {0.6079961166503924,0.6065810574861376,0.6013261953687711,0.5965308715430633,0.5994435506089473,0.6004895998317685,0.5996471249422233}
-DEBUG CrossValidation      - labels: {1.0,1.0,1.0,1.0,1.0,1.0,1.0}
-...skipping bad input line (bad numbers)
-...skipping bad input line (bad numbers)
-...skipping bad input line (bad numbers)
-...skipping bad input line (bad numbers)
-...skipping bad input line (bad numbers)
-java.lang.NumberFormatException
-	at auc.Confusion.addPoint(Confusion.java:90)
-	at auc.AUCCalculator.readArrays(AUCCalculator.java:242)
-
-             for (int i = 0; i < labels.length; i++) {   // convert -1 label to 0 label.
-
-       if (labels[i] < 0) {
-           labels[i] = 0;
-       }
-   }
-   int[] intLabels = new int[labels.length];
-   int i = 0;
-   for (double label : labels) {
-       intLabels[i++] = (int) label;
-   }
-   // see http://pages.cs.wisc.edu/~richm/programs/AUC/
-   Confusion c = auc.AUCCalculator.readArrays(intLabels, decisionValues);
-   return c.calculateAUCROC();
-}
-        */
-        double labelsSingleVal = labels[0];
-
+        assert decisionValues.length == labels.length
+                : "number of predictions must match number of labels.";
 
         for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
             if (decisionValues[i] < 0) {
@@ -177,37 +141,29 @@ java.lang.NumberFormatException
             if (labels[i] < 0) {
                 labels[i] = 0;
             }
-            if ((labelsSingleVal != Double.MIN_VALUE) && (labels[i] != labelsSingleVal)) {
-                labelsSingleVal = Double.MIN_VALUE;
-            }
-            if ((decisionSingleVal != Double.MIN_VALUE) && (decisionValues[i] != decisionSingleVal)) {
-                decisionSingleVal = Double.MIN_VALUE;
-            }
         }
-        if ((labelsSingleVal != Double.MIN_VALUE) && (decisionSingleVal != Double.MIN_VALUE)) {
-            double shortCircuitValue;
-            if (labelsSingleVal == decisionSingleVal) {
-                shortCircuitValue = 1.0d;
-            } else {
-                shortCircuitValue = 0.5d;
-            }
-            if (LOG.isDebugEnabled()) {
-                String debugStr = String.format("++ Short circuit, same values "
-                        + "(label=%f's, decisionValues=%f's) returning %f",
-                        labelsSingleVal, decisionSingleVal, shortCircuitValue);
-                LOG.debug(debugStr);
-            }
+
+        Double shortCircuitValue = areaUnderRocCurvShortCircuit(decisionValues, labels);
+        if (shortCircuitValue != null) {
             return shortCircuitValue;
         }
 
         final RConnectionPool connectionPool = RConnectionPool.getInstance();
         RConnection connection = null;
 
-// CALL R ROC
         try {
+            // CALL R ROC
             connection = connectionPool.borrowConnection();
             connection.assign("predictions", decisionValues);
             connection.assign("labels", labels);
+
+            // library(ROCR)
+            // predictions <- c(1,1,0,1,1,1,1)
+            // labels <- c(1,1,1,1,1,0,1)
+            // flabels <- factor(labels,c(0,1))
+            // pred.svm <- prediction(predictions, flabels)
+            // perf.svm <- performance(pred.svm, 'auc')
+            // attr(perf.svm,"y.values")[[1]]
 
             StringBuffer rCommand = new StringBuffer();
             rCommand.append("library(ROCR)\n");
@@ -235,6 +191,51 @@ java.lang.NumberFormatException
                 }
             }
         }
+    }
+
+    /**
+     * Checks decisionValues and lables and determins if we
+     * can short-circuit the value based on pre-defined rules.
+     * Returns null if the decision cannot be short-circuited
+     * or the value
+     * @param decisionValues the decision values
+     * @param labels the label values
+     * @return null or a Double value
+     */
+    public static Double areaUnderRocCurvShortCircuit(
+            final double[] decisionValues, final double[] labels) {
+
+        VectorDetails decisionValueDetails = new VectorDetails(decisionValues);
+        VectorDetails labelDetails = new VectorDetails(labels);
+
+        Double shortCircuitValue = null;
+        String debugStr = null;
+        if (labelDetails.isAllZeros()) {
+            if (decisionValueDetails.isAllPositive()) {
+                shortCircuitValue = 0.0;
+                debugStr = "++SHORTCIRCUIT: Label all zeros, decision all positive. Returning 0";
+            } else if (decisionValueDetails.isAllNegative()) {
+                shortCircuitValue = 1.0;
+                debugStr = "++SHORTCIRCUIT: Label all zeros, decision all negative. Returning 1";
+            } else {
+                debugStr = "++SHORTCIRCUIT: Label all zeros, decisions vary. This will fail ROC.";
+            }
+        } else if (labelDetails.isAllOnes()) {
+            if (decisionValueDetails.isAllPositive()) {
+                shortCircuitValue = 1.0;
+                debugStr = "++SHORTCIRCUIT: Label all ones, decision all positive. Returning 1";
+            } else if (decisionValueDetails.isAllNegative()) {
+                shortCircuitValue = 0.0;
+                debugStr = "++SHORTCIRCUIT: Label all ones, decision all negative. Returning 0";
+            } else {
+                debugStr = "++SHORTCIRCUIT: Label all ones, decisions vary. This will fail ROC.";
+            }
+        }
+
+        if (LOG.isDebugEnabled() && debugStr != null) {
+            LOG.debug(debugStr);
+        }
+        return shortCircuitValue;
     }
 
     /**
@@ -414,6 +415,7 @@ java.lang.NumberFormatException
     public ClassificationModel getModel() {
         return model;
     }
+
 
 
 }
