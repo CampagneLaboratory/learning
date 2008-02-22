@@ -40,6 +40,8 @@ import org.rosuda.REngine.Rserve.RserveException;
 import java.util.Collections;
 import java.io.File;
 
+import auc.Confusion;
+
 /**
  * Performs cross-validation for a configurable classifier.
  *
@@ -121,17 +123,53 @@ public class CrossValidation {
     }
 
     /**
-     * Report the area under the Receiver Operating Characteristic (ROC) curve. Estimates are done with a leave one out
-     * evaluation.
+     * Report the area under the Receiver Operating Characteristic (ROC) curve.
+     * See http://pages.cs.wisc.edu/~richm/programs/AUC/
      *
-     * @param decisionValues
-     * @param labels
+     * @param decisionValues Larger values indicate better confidence that the instance belongs to class 1.
+     * @param labels         Values of -1 or 0 indicate that the instance belongs to class 0, values of 1 indicate that the
+     *                       instance belongs to class 1.
      * @return ROC AUC
      */
     public static double areaUnderRocCurveLOO(final double[] decisionValues, final double[] labels) {
+
         assert decisionValues.length == labels.length : "number of predictions must match number of labels.";
         double decisionSingleVal = decisionValues[0];
+
+        /*
+             Alternative with AUC Calculator (java implementation from See http://pages.cs.wisc.edu/~richm/programs/AUC/
+             does not work on some evaluations:
+DEBUG LibSvmClassifier     - decision values: {0.5996471249422233,0.4003528750577767}
+DEBUG CrossValidation      - decisions: {0.6079961166503924,0.6065810574861376,0.6013261953687711,0.5965308715430633,0.5994435506089473,0.6004895998317685,0.5996471249422233}
+DEBUG CrossValidation      - labels: {1.0,1.0,1.0,1.0,1.0,1.0,1.0}
+...skipping bad input line (bad numbers)
+...skipping bad input line (bad numbers)
+...skipping bad input line (bad numbers)
+...skipping bad input line (bad numbers)
+...skipping bad input line (bad numbers)
+java.lang.NumberFormatException
+	at auc.Confusion.addPoint(Confusion.java:90)
+	at auc.AUCCalculator.readArrays(AUCCalculator.java:242)
+
+             for (int i = 0; i < labels.length; i++) {   // convert -1 label to 0 label.
+
+       if (labels[i] < 0) {
+           labels[i] = 0;
+       }
+   }
+   int[] intLabels = new int[labels.length];
+   int i = 0;
+   for (double label : labels) {
+       intLabels[i++] = (int) label;
+   }
+   // see http://pages.cs.wisc.edu/~richm/programs/AUC/
+   Confusion c = auc.AUCCalculator.readArrays(intLabels, decisionValues);
+   return c.calculateAUCROC();
+}
+        */
         double labelsSingleVal = labels[0];
+
+
         for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
             if (decisionValues[i] < 0) {
                 decisionValues[i] = 0;
@@ -155,8 +193,8 @@ public class CrossValidation {
             }
             if (LOG.isDebugEnabled()) {
                 String debugStr = String.format("++ Short circuit, same values "
-                    + "(label=%f's, decisionValues=%f's) returning %f",
-                    labelsSingleVal, decisionSingleVal, shortCircuitValue);
+                        + "(label=%f's, decisionValues=%f's) returning %f",
+                        labelsSingleVal, decisionSingleVal, shortCircuitValue);
                 LOG.debug(debugStr);
             }
             return shortCircuitValue;
@@ -165,17 +203,12 @@ public class CrossValidation {
         final RConnectionPool connectionPool = RConnectionPool.getInstance();
         RConnection connection = null;
 
-        // CALL R ROC
+// CALL R ROC
         try {
             connection = connectionPool.borrowConnection();
             connection.assign("predictions", decisionValues);
             connection.assign("labels", labels);
-         /*   if (LOG.isDebugEnabled()) {
-                LOG.debug("transformed decisions: " + ArrayUtils.toString(decisionValues));
-            }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("transformed labels: " + ArrayUtils.toString(labels));
-            }*/
+
             StringBuffer rCommand = new StringBuffer();
             rCommand.append("library(ROCR)\n");
             rCommand.append("flabels <- factor(labels,c(0,1))\n");
@@ -185,7 +218,7 @@ public class CrossValidation {
             final REXP expression = connection.eval(rCommand.toString());
 
             final double valueROC_AUC = expression.asDouble();
-            //System.out.println("result from R: " + valueROC_AUC);
+            LOG.debug("result from R: " + valueROC_AUC);
             return valueROC_AUC;
         } catch (Exception e) {
             // connection error or otherwise me
@@ -311,10 +344,10 @@ public class CrossValidation {
     public EvaluationMeasure crossValidation(final int k) {
         assert k <= problem.getSize() : "Number of folds must be less or equal to number of training examples.";
         final IntList indices = new IntArrayList();
-          for (int i = 0; i < problem.getSize() ; ++i) {
-       //         System.out.println("Assigning instance "+i+ " to fold "+(i % k));
-                indices.add(i % k);
-            }
+        for (int i = 0; i < problem.getSize(); ++i) {
+            //         System.out.println("Assigning instance "+i+ " to fold "+(i % k));
+            indices.add(i % k);
+        }
 
         Collections.shuffle(indices, randomAdapter);
 
@@ -345,11 +378,16 @@ public class CrossValidation {
 
                 final double decision = classifier.predict(looModel, problem, testInstanceIndex, probs);
                 final double trueLabel = problem.getLabel(testInstanceIndex);
-                decisionValues[index] = decision;
+                double maxProb = 0;
+                for (double prob : probs) {
+                    maxProb = Math.max(prob, maxProb);
+                }
+                decisionValues[index] = decision * maxProb;
                 labels[index] = trueLabel;
                 index++;
-                ctable.observeDecision(trueLabel, decision);
-                ctableMicro.observeDecision(trueLabel, decision);
+                final int binaryDecision = decision < 0 ? -1 : 1;
+                ctable.observeDecision(trueLabel, binaryDecision);
+                ctableMicro.observeDecision(trueLabel, binaryDecision);
             }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("decisions: " + ArrayUtils.toString(decisionValues));
