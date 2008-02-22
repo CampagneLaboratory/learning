@@ -142,7 +142,12 @@ public class CrossValidation {
                 labels[i] = 0;
             }
         }
-
+           if (LOG.isDebugEnabled()) {
+                LOG.debug("decisions: " + ArrayUtils.toString(decisionValues));
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("labels: " + ArrayUtils.toString(labels));
+            }
         Double shortCircuitValue = areaUnderRocCurvShortCircuit(decisionValues, labels);
         if (shortCircuitValue != null) {
             return shortCircuitValue;
@@ -168,7 +173,7 @@ public class CrossValidation {
             StringBuffer rCommand = new StringBuffer();
             rCommand.append("library(ROCR)\n");
             rCommand.append("flabels <- factor(labels,c(0,1))\n");
-            rCommand.append("pred.svm <- prediction(predictions, flabels)\n");
+            rCommand.append("pred.svm <- prediction(predictions, labels)\n");
             rCommand.append("perf.svm <- performance(pred.svm, 'auc')\n");
             rCommand.append("attr(perf.svm,\"y.values\")[[1]]");  // attr(perf.rocOutAUC,"y.values")[[1]]\
             final REXP expression = connection.eval(rCommand.toString());
@@ -383,19 +388,14 @@ public class CrossValidation {
                 for (double prob : probs) {
                     maxProb = Math.max(prob, maxProb);
                 }
-                decisionValues[index] = decision * maxProb;
+                decisionValues[index] =  decision * maxProb;
                 labels[index] = trueLabel;
                 index++;
                 final int binaryDecision = decision < 0 ? -1 : 1;
                 ctable.observeDecision(trueLabel, binaryDecision);
                 ctableMicro.observeDecision(trueLabel, binaryDecision);
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("decisions: " + ArrayUtils.toString(decisionValues));
-            }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("labels: " + ArrayUtils.toString(labels));
-            }
+
             ctableMicro.average();
             final double aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
             aucValues.add(aucForOneFold);
