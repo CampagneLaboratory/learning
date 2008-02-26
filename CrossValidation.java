@@ -56,6 +56,7 @@ public class CrossValidation {
         this.classifier = classifier;
         this.problem = problem;
         this.randomAdapter = new RandomAdapter(randomEngine);
+        calculateROC = true;
     }
 
     public ClassificationModel trainModel() {
@@ -113,10 +114,25 @@ public class CrossValidation {
             ctable.observeDecision(trueLabel, decision);
         }
         ctable.average();
-
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
-        measure.setRocAuc(areaUnderRocCurveLOO(decisionValues, labels));
+
+        if (calculateROC) {
+            measure.setRocAuc(areaUnderRocCurveLOO(decisionValues, labels));
+        } else {
+            measure.setRocAuc(Double.NaN);
+        }
         return measure;
+    }
+
+    boolean calculateROC;
+
+    /**
+     * Setting this flag to false removes the dependency on the R server.
+     *
+     * @param calculate If True, use an RServer to evaluate area under the roc curve. If False, skip the calculation.
+     */
+    public void setCalculateROC(boolean calculate) {
+        this.calculateROC = calculate;
     }
 
     /**
@@ -134,9 +150,7 @@ public class CrossValidation {
                 : "number of predictions must match number of labels.";
 
         for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
-            if (decisionValues[i] < 0) {
-                decisionValues[i] = 0;
-            }
+
             if (labels[i] < 0) {
                 labels[i] = 0;
             }
@@ -376,10 +390,10 @@ public class CrossValidation {
 
                 final double decision = classifier.predict(looModel, problem, testInstanceIndex, probs);
                 final double trueLabel = problem.getLabel(testInstanceIndex);
-                double maxProb = 0;
-                for (double prob : probs) {
-                    maxProb = Math.max(prob, maxProb);
-                }
+                double maxProb;
+
+                maxProb = Math.max(probs[0], probs[1]);
+
                 decisionValues[index] = decision * maxProb;
                 labels[index] = trueLabel;
                 index++;
@@ -389,7 +403,10 @@ public class CrossValidation {
             }
 
             ctableMicro.average();
-            final double aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
+            double aucForOneFold = Double.NaN;
+            if (calculateROC) {
+                aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
+            }
             aucValues.add(aucForOneFold);
         }
         ctable.average();
@@ -428,7 +445,7 @@ public class CrossValidation {
      * Determines if a fold split is valid. See ROCR comment above.
      *
      * @param indices Training instance fold assignments.
-     * @param k  Number of folds in the split
+     * @param k       Number of folds in the split
      * @return True if the fold is invalid (does not have at least two labels represented)
      * @see #assignFolds
      */
