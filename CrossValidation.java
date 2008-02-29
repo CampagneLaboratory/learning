@@ -366,6 +366,7 @@ public class CrossValidation {
         final int[] foldIndices = assignFolds(k);
 
         final DoubleList aucValues = new DoubleArrayList();
+        final DoubleList f1Values = new DoubleArrayList();
         final ContingencyTable ctable = new ContingencyTable();
         for (int f = 0; f < k; ++f) { // use each fold as test set while the others are the training set:
             final IntSet trainingSet = new IntArraySet();
@@ -403,6 +404,7 @@ public class CrossValidation {
             }
 
             ctableMicro.average();
+            f1Values.add(ctableMicro.getF1Measure());
             double aucForOneFold = Double.NaN;
             if (calculateROC) {
                 aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
@@ -413,6 +415,7 @@ public class CrossValidation {
 
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
         measure.setRocAucValues(aucValues);
+        measure.setF1Values(f1Values);
         return measure;
     }
 
