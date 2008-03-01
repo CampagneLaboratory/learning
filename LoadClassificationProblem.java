@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 /**
  * A class to construct a classification problem from features/labels in a table.
  *
@@ -119,6 +120,46 @@ public class LoadClassificationProblem {
                         featureIndex += 1;
 
                     }
+                }
+                currentRowIndex++;
+            }
+        };
+        table.processRows(rowProcessor);
+
+    }
+
+    /**
+     * Load a problem for use with a pre-trained model. All columns should be double valued and map exactly to the features
+     * of the pre-trained model.
+     *
+     * @param problem
+     * @param table
+     * @throws InvalidColumnException
+     * @throws TypeMismatchException
+     */
+    public void load(final ClassificationProblem problem, final Table table) throws InvalidColumnException, TypeMismatchException {
+        currentRowIndex = 0;
+        final RowProcessor rowProcessor = new RowProcessor(RowProcessor.buildColumnIndices(table, null)) {
+
+            public void processRow(final Table table, final Table.RowIterator ri)
+                    throws TypeMismatchException, InvalidColumnException {
+
+                // label:
+                double label = 0;   // We don't know what the label is.
+
+                final int numberOfFeatures = columnIndices.length;
+                final int instanceIndex = problem.addInstance(numberOfFeatures);
+                problem.setLabel(instanceIndex, label);
+
+                for (final int columnIndex : columnIndices) {
+
+                    // features:
+                    double value = table.getDoubleValue(columnIndex, ri);
+
+                    if (value != value) { // NaN case
+                        value = 0;
+                    }
+                    problem.setFeature(instanceIndex, columnIndex, value);
                 }
                 currentRowIndex++;
             }
