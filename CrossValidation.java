@@ -94,6 +94,43 @@ public class CrossValidation {
     }
 
     /**
+     * Report evaluation measures for predictions on a test set.
+     *
+     * @param decisions    Negative values predict the first class, while positive values predict the second class.
+     * @param trueLabels   label=0 encodes the first class, label=1 the second class.
+     * @param calculateROC When True, the area under the ROC curve is estimated.
+     * @return
+     */
+    public static EvaluationMeasure testSetEvaluation(double decisions[], double trueLabels[], boolean calculateROC) {
+        final ContingencyTable ctable = new ContingencyTable();
+        assert decisions.length == trueLabels.length : "decision and label arrays must have the same length.";
+        for (int i = 0; i < trueLabels.length; i++) {
+            // convert labels to the conventions used by contingency table.
+            if (trueLabels[i] == 0) {
+                trueLabels[i] = -1;
+            }
+        }
+        for (int i = 0; i < decisions.length; i++) {   // for each training example, leave it out:
+
+            final double decision = decisions[i];
+            final double trueLabel = trueLabels[i];
+
+            final int binaryDecision = decision < 0 ? -1 : 1;
+            ctable.observeDecision(trueLabel, binaryDecision);
+
+        }
+        ctable.average();
+        final EvaluationMeasure measure = convertToEvalMeasure(ctable);
+
+        if (calculateROC) {
+            measure.setRocAuc(areaUnderRocCurveLOO(decisions, trueLabels));
+        } else {
+            measure.setRocAuc(Double.NaN);
+        }
+        return measure;
+    }
+
+    /**
      * Report leave-one out evaluation measures for training set.
      *
      * @return
@@ -111,7 +148,10 @@ public class CrossValidation {
             final double trueLabel = problem.getLabel(i);
             decisionValues[i] = decision;
             labels[i] = trueLabel;
-            ctable.observeDecision(trueLabel, decision);
+            final int binaryDecision = decision < 0 ? -1 : 1;
+            ctable.observeDecision(trueLabel, binaryDecision);
+
+
         }
         ctable.average();
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
@@ -468,7 +508,7 @@ public class CrossValidation {
         return false;
     }
 
-    private EvaluationMeasure convertToEvalMeasure(final ContingencyTable ctable) {
+    private static EvaluationMeasure convertToEvalMeasure(final ContingencyTable ctable) {
         return new EvaluationMeasure(ctable);
     }
 
