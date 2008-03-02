@@ -76,11 +76,11 @@ public class LibSvmClassifier implements Classifier {
             // probabilities.
             LOG.debug("substituing decision values for probabilities. The SVM was not trained to estimate probabilities.");
             svm.svm_predict_values(getNativeModel(trainingModel), getNativeProblem(problem).x[instanceIndex], probabilities);
+            probabilities[0]=Math.abs(probabilities[0]);
             probabilities[1] = Double.NEGATIVE_INFINITY; // make sure probs[0] is max of the two values.
             LOG.debug("decision values: " + ArrayUtils.toString(probabilities));
             double decision = svm.svm_predict(getNativeModel(trainingModel), getNativeProblem(problem).x[instanceIndex]);
-
-            probabilities[0] *= decision;
+      
 
             return decision;
 
