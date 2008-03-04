@@ -51,6 +51,20 @@ public class CrossValidation {
     Classifier classifier;
     ClassificationProblem problem;
 
+    /**
+     * Set the number of cross-validation repeats. When more than 1, repeats are done with different folds and results reported
+     * averaged over all the fold repeats.
+     *
+     * @param repeatNumber
+     */
+    public void setRepeatNumber(int repeatNumber) {
+       assert repeatNumber>=1 : "Number of repeats must be at least one.";
+
+        this.repeatNumber = repeatNumber;
+    }
+
+    private int repeatNumber = 1;
+
     public CrossValidation(final Classifier classifier, final ClassificationProblem problem,
                            final RandomEngine randomEngine) {
         this.classifier = classifier;
@@ -402,54 +416,57 @@ public class CrossValidation {
      * @return Evaluation measures.
      */
     public EvaluationMeasure crossValidation(final int k) {
-        assert k <= problem.getSize() : "Number of folds must be less or equal to number of training examples.";
-        final int[] foldIndices = assignFolds(k);
-
+        final ContingencyTable ctable = new ContingencyTable();
         final DoubleList aucValues = new DoubleArrayList();
         final DoubleList f1Values = new DoubleArrayList();
-        final ContingencyTable ctable = new ContingencyTable();
-        for (int f = 0; f < k; ++f) { // use each fold as test set while the others are the training set:
-            final IntSet trainingSet = new IntArraySet();
-            final IntSet testSet = new IntArraySet();
-            for (int i = 0; i < problem.getSize(); i++) {   // assign each training example to a fold:
-                if (f == foldIndices[i]) {
-                    testSet.add(i);
-                } else {
-                    trainingSet.add(i);
+
+        for (int r = 0; r < repeatNumber; r++) {
+            assert k <= problem.getSize() : "Number of folds must be less or equal to number of training examples.";
+            final int[] foldIndices = assignFolds(k);
+
+            for (int f = 0; f < k; ++f) { // use each fold as test set while the others are the training set:
+                final IntSet trainingSet = new IntArraySet();
+                final IntSet testSet = new IntArraySet();
+                for (int i = 0; i < problem.getSize(); i++) {   // assign each training example to a fold:
+                    if (f == foldIndices[i]) {
+                        testSet.add(i);
+                    } else {
+                        trainingSet.add(i);
+                    }
                 }
+
+                final ClassificationProblem currentTrainingSet = problem.filter(trainingSet);
+                final ClassificationModel looModel = classifier.train(currentTrainingSet);
+                final ContingencyTable ctableMicro = new ContingencyTable();
+
+                final double[] decisionValues = new double[testSet.size()];
+                final double[] labels = new double[testSet.size()];
+                int index = 0;
+                final double[] probs = {0d, 0d};
+                for (final int testInstanceIndex : testSet) {  // for each test example:
+
+                    final double decision = classifier.predict(looModel, problem, testInstanceIndex, probs);
+                    final double trueLabel = problem.getLabel(testInstanceIndex);
+                    double maxProb;
+
+                    maxProb = Math.max(probs[0], probs[1]);
+
+                    decisionValues[index] = decision * maxProb;
+                    labels[index] = trueLabel;
+                    index++;
+                    final int binaryDecision = decision < 0 ? -1 : 1;
+                    ctable.observeDecision(trueLabel, binaryDecision);
+                    ctableMicro.observeDecision(trueLabel, binaryDecision);
+                }
+
+                ctableMicro.average();
+                f1Values.add(ctableMicro.getF1Measure());
+                double aucForOneFold = Double.NaN;
+                if (calculateROC) {
+                    aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
+                }
+                aucValues.add(aucForOneFold);
             }
-
-            final ClassificationProblem currentTrainingSet = problem.filter(trainingSet);
-            final ClassificationModel looModel = classifier.train(currentTrainingSet);
-            final ContingencyTable ctableMicro = new ContingencyTable();
-
-            final double[] decisionValues = new double[testSet.size()];
-            final double[] labels = new double[testSet.size()];
-            int index = 0;
-            final double[] probs = {0d, 0d};
-            for (final int testInstanceIndex : testSet) {  // for each test example:
-
-                final double decision = classifier.predict(looModel, problem, testInstanceIndex, probs);
-                final double trueLabel = problem.getLabel(testInstanceIndex);
-                double maxProb;
-
-                maxProb = Math.max(probs[0], probs[1]);
-
-                decisionValues[index] = decision * maxProb;
-                labels[index] = trueLabel;
-                index++;
-                final int binaryDecision = decision < 0 ? -1 : 1;
-                ctable.observeDecision(trueLabel, binaryDecision);
-                ctableMicro.observeDecision(trueLabel, binaryDecision);
-            }
-
-            ctableMicro.average();
-            f1Values.add(ctableMicro.getF1Measure());
-            double aucForOneFold = Double.NaN;
-            if (calculateROC) {
-                aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
-            }
-            aucValues.add(aucForOneFold);
         }
         ctable.average();
 
