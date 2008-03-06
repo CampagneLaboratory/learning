@@ -256,11 +256,7 @@ public class CrossValidation {
             return Double.NaN;
         } finally {
             if (connection != null) {
-                try {
-                    connectionPool.returnConnection(connection);
-                } catch (RserveException e) {
-                    LOG.warn("Couldn't return connection to the pool", e);
-                }
+                connectionPool.returnConnection(connection);
             }
         }
     }
@@ -366,11 +362,7 @@ public class CrossValidation {
                     e);
         } finally {
             if (connection != null) {
-                try {
-                    connectionPool.returnConnection(connection);
-                } catch (RserveException e) {
-                    LOG.warn("Couldn't return connection to the pool", e);
-                }
+                connectionPool.returnConnection(connection);
             }
         }
     }
