@@ -116,6 +116,7 @@ public class LoadClassificationProblem {
                         if (value != value) { // NaN case
                             value = 0;
                         }
+                      //  System.out.println(String.format("Loading feature index %d probeId %s",featureIndex-1, table.getIdentifier(columnIndex)));
                         problem.setFeature(instanceIndex, featureIndex - 1, value);
                         featureIndex += 1;
 

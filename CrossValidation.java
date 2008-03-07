@@ -58,7 +58,7 @@ public class CrossValidation {
      * @param repeatNumber
      */
     public void setRepeatNumber(int repeatNumber) {
-       assert repeatNumber>=1 : "Number of repeats must be at least one.";
+        assert repeatNumber >= 1 : "Number of repeats must be at least one.";
 
         this.repeatNumber = repeatNumber;
     }
@@ -426,7 +426,7 @@ public class CrossValidation {
                         trainingSet.add(i);
                     }
                 }
-
+                assert testSet.size() + trainingSet.size() == problem.getSize() : "test set and training set size must add to whole problem size.";
                 final ClassificationProblem currentTrainingSet = problem.filter(trainingSet);
                 final ClassificationModel looModel = classifier.train(currentTrainingSet);
                 final ContingencyTable ctableMicro = new ContingencyTable();
