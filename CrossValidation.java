@@ -30,6 +30,10 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.rosuda.REngine.REXP;
@@ -50,6 +54,20 @@ public class CrossValidation {
     private ClassificationModel model;
     Classifier classifier;
     ClassificationProblem problem;
+    ObjectSet<CharSequence> evaluationMeasureNames = new ObjectArraySet<CharSequence>();
+
+    /**
+     * Request evaluation of the given performance measure.
+     *
+     * @param measureName Name of a performance measure supported by ROCR.
+     *                    Valid names include:
+     *                    acc, err, fpr, fall,  tpr, rec, sens, fnr, miss, tnr, spec, ppv, prec, npv, pcfall, pcmiss,
+     *                    rpp,  rnp, phi, mat, mi, chisq, odds, lift, f, rch,  auc, prbe, cal,  mxe, rmse, sar, ecost, cost
+     *                    See the ROCR documentation for definition of these measures.
+     */
+    public void evaluateMeasure(CharSequence measureName) {
+        evaluationMeasureNames.add(measureName);
+    }
 
     /**
      * Set the number of cross-validation repeats. When more than 1, repeats are done with different folds and results reported
@@ -70,7 +88,7 @@ public class CrossValidation {
         this.classifier = classifier;
         this.problem = problem;
         this.randomAdapter = new RandomAdapter(randomEngine);
-        calculateROC = true;
+        evaluateMeasure("auc");
     }
 
     public ClassificationModel trainModel() {
@@ -110,12 +128,11 @@ public class CrossValidation {
     /**
      * Report evaluation measures for predictions on a test set.
      *
-     * @param decisions    Negative values predict the first class, while positive values predict the second class.
-     * @param trueLabels   label=0 encodes the first class, label=1 the second class.
-     * @param calculateROC When True, the area under the ROC curve is estimated.
+     * @param decisions  Negative values predict the first class, while positive values predict the second class.
+     * @param trueLabels label=0 encodes the first class, label=1 the second class.
      * @return
      */
-    public static EvaluationMeasure testSetEvaluation(double decisions[], double trueLabels[], boolean calculateROC) {
+    public static EvaluationMeasure testSetEvaluation(double decisions[], double trueLabels[], ObjectSet<CharSequence> evaluationMeasureNames) {
         final ContingencyTable ctable = new ContingencyTable();
         assert decisions.length == trueLabels.length : "decision and label arrays must have the same length.";
         for (int i = 0; i < trueLabels.length; i++) {
@@ -135,14 +152,11 @@ public class CrossValidation {
         }
         ctable.average();
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
+        evaluateWithROCR(decisions, trueLabels, evaluationMeasureNames, measure);
 
-        if (calculateROC) {
-            measure.setRocAuc(areaUnderRocCurveLOO(decisions, trueLabels));
-        } else {
-            measure.setRocAuc(Double.NaN);
-        }
         return measure;
     }
+
 
     /**
      * Report leave-one out evaluation measures for training set.
@@ -170,11 +184,8 @@ public class CrossValidation {
         ctable.average();
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
 
-        if (calculateROC) {
-            measure.setRocAuc(areaUnderRocCurveLOO(decisionValues, labels));
-        } else {
-            measure.setRocAuc(Double.NaN);
-        }
+        evaluateWithROCR(decisionValues, labels, evaluationMeasureNames, measure);
+
         return measure;
     }
 
@@ -262,6 +273,97 @@ public class CrossValidation {
     }
 
     /**
+     * Evaluate a variety of performance measures with <a href="http://rocr.bioinf.mpi-sb.mpg.de/ROCR.pdf">ROCR</a>.
+     *
+     * @param decisionValues Larger values indicate better confidence that the instance belongs to class 1.
+     * @param labels         Values of -1 or 0 indicate that the instance belongs to class 0, values of 1 indicate that the
+     *                       instance belongs to class 1.
+     * @param measureNames   Name of performance measures to evaluate.
+     * @param measure        Where performance values will be stored.
+     * @see #evaluateMeasure
+     */
+    public static void evaluateWithROCR(final double[] decisionValues, final double[] labels,
+                                        ObjectSet<CharSequence> measureNames,
+                                        EvaluationMeasure measure) {
+
+        assert decisionValues.length == labels.length
+                : "number of predictions must match number of labels.";
+
+        for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
+
+            if (labels[i] < 0) {
+                labels[i] = 0;
+            }
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("decisions: " + ArrayUtils.toString(decisionValues));
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("labels: " + ArrayUtils.toString(labels));
+        }
+
+
+        final RConnectionPool connectionPool = RConnectionPool.getInstance();
+        RConnection connection = null;
+        CharSequence performanceValueName = null;
+        try {
+            // CALL R ROC
+            connection = connectionPool.borrowConnection();
+            connection.assign("predictions", decisionValues);
+            connection.assign("labels", labels);
+
+            // library(ROCR)
+            // predictions <- c(1,1,0,1,1,1,1)
+            // labels <- c(1,1,1,1,1,0,1)
+            // flabels <- factor(labels,c(0,1))
+            // pred.svm <- prediction(predictions, flabels)
+            // perf.svm <- performance(pred.svm, 'auc')
+            // attr(perf.svm,"y.values")[[1]]
+
+            StringBuffer rCommand = new StringBuffer();
+            rCommand.append("library(ROCR)\n");
+            rCommand.append("flabels <- factor(labels,c(0,1))\n");
+            rCommand.append("pred.svm <- prediction(predictions, labels)\n");
+
+            final REXP expression = connection.eval(rCommand.toString());
+
+            for (ObjectIterator<CharSequence> charSequenceObjectIterator = measureNames.iterator();
+                 charSequenceObjectIterator.hasNext();) {
+                StringBuffer rCommandMeasure = new StringBuffer();
+                performanceValueName = charSequenceObjectIterator.next();
+                rCommandMeasure.append("perf.svm <- performance(pred.svm, '" + performanceValueName + "')\n");
+                rCommandMeasure.append("attr(perf.svm,\"y.values\")[[1]]");
+                final REXP expressionValue = connection.eval(rCommandMeasure.toString());
+
+                final double value = expressionValue.asDouble();
+                LOG.debug("result from R (" + performanceValueName + ") : " + value);
+                measure.addValue(performanceValueName, value);
+            }
+
+        }
+
+        catch (
+                Exception e
+                )
+
+        {
+            // connection error or otherwise me
+            LOG.warn(
+                    "Cannot evaluate performance measure " + performanceValueName + ". Make sure Rserve (R server) is configured and running.",
+                    e);
+            measure.addValue(performanceValueName, Double.NaN);
+        }
+
+        finally
+
+        {
+            if (connection != null) {
+                connectionPool.returnConnection(connection);
+            }
+        }
+    }
+
+    /**
      * Checks decisionValues and lables and determins if we
      * can short-circuit the value based on pre-defined rules.
      * Returns null if the decision cannot be short-circuited
@@ -330,11 +432,11 @@ public class CrossValidation {
         final RConnectionPool connectionPool = RConnectionPool.getInstance();
         RConnection connection = null;
 
-        // CALL R ROC
+// CALL R ROC
         try {
-            // R server only understands unix style path. Convert windows to unix if needed:
+// R server only understands unix style path. Convert windows to unix if needed:
             final String filename = rocCurvefilename.replaceAll("[\\\\]", "/");
-            //     System.out.println("filename: "+filename);
+//     System.out.println("filename: "+filename);
             final File deleteThis = new File(filename);
             if (deleteThis.exists()) {
                 deleteThis.delete();
@@ -354,7 +456,7 @@ public class CrossValidation {
                     cmd);  // attr(perf.rocOutAUC,"y.values")[[1]]
 
             final double valueROC_AUC = expression.asDouble();
-            //System.out.println("result from R: " + valueROC_AUC);
+//System.out.println("result from R: " + valueROC_AUC);
         } catch (Exception e) {
             // connection error or otherwise me
             LOG.warn(
@@ -411,7 +513,7 @@ public class CrossValidation {
         final ContingencyTable ctable = new ContingencyTable();
         final DoubleList aucValues = new DoubleArrayList();
         final DoubleList f1Values = new DoubleArrayList();
-
+        final EvaluationMeasure measure = new EvaluationMeasure();
         for (int r = 0; r < repeatNumber; r++) {
             assert k <= problem.getSize() : "Number of folds must be less or equal to number of training examples.";
             final int[] foldIndices = assignFolds(k);
@@ -454,16 +556,15 @@ public class CrossValidation {
                 ctableMicro.average();
                 f1Values.add(ctableMicro.getF1Measure());
                 double aucForOneFold = Double.NaN;
-                if (calculateROC) {
-                    aucForOneFold = areaUnderRocCurveLOO(decisionValues, labels);
-                }
+                evaluateWithROCR(decisionValues, labels, evaluationMeasureNames, measure);
+
                 aucValues.add(aucForOneFold);
             }
         }
         ctable.average();
 
-        final EvaluationMeasure measure = convertToEvalMeasure(ctable);
-        measure.setRocAucValues(aucValues);
+        measure.setContingencyTable(ctable);
+        //  measure.setRocAucValues(aucValues);
         measure.setF1Values(f1Values);
         return measure;
     }
@@ -527,4 +628,7 @@ public class CrossValidation {
     }
 
 
+    public void evaluateMeasures(CharSequence... names) {
+        for (CharSequence name : names) evaluateMeasure(name);
+    }
 }
