@@ -37,10 +37,14 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.rosuda.REngine.REXP;
+import org.rosuda.REngine.RList;
+import org.rosuda.REngine.REXPDouble;
+import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.io.File;
 
 /**
@@ -294,6 +298,7 @@ public class CrossValidation {
             if (labels[i] < 0) {
                 labels[i] = 0;
             }
+
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("decisions: " + ArrayUtils.toString(decisionValues));
@@ -322,7 +327,7 @@ public class CrossValidation {
 
             StringBuffer rCommand = new StringBuffer();
             rCommand.append("library(ROCR)\n");
-            rCommand.append("flabels <- factor(labels,c(0,1))\n");
+            rCommand.append("flabels <- labels\n");
             rCommand.append("pred.svm <- prediction(predictions, labels)\n");
 
             final REXP expression = connection.eval(rCommand.toString());
@@ -335,18 +340,34 @@ public class CrossValidation {
                 rCommandMeasure.append("attr(perf.svm,\"y.values\")[[1]]");
                 final REXP expressionValue = connection.eval(rCommandMeasure.toString());
 
-                final double value = expressionValue.asDouble();
-                LOG.debug("result from R (" + performanceValueName + ") : " + value);
-                measure.addValue(performanceValueName, value);
+
+                final double[] values = expressionValue.asDoubles();
+                if (values.length == 1) {
+                    // this performance measure is threshold independent..
+                    LOG.debug("result from R (" + performanceValueName + ") : " + values[0]);
+                    measure.addValue(performanceValueName, values[0]);
+                } else {
+                    // we have one performance measure value per decision threshold.
+                    StringBuffer rCommandThresholds = new StringBuffer();
+                    rCommandThresholds.append("attr(perf.svm,\"x.values\")[[1]]");
+                    final REXP expressionThresholds = connection.eval(rCommandThresholds.toString());
+                    double[] thresholds = expressionThresholds.asDoubles();
+
+                    // find the index of x.value which indicates a threshold more or equal to zero (for the decision value)
+                    int thresholdGEZero = -1;
+                    for (int index = thresholds.length - 1; index >= 0; index--) {
+                        if (thresholds[index] >= 0) {
+                            thresholdGEZero = index;
+                            break;
+                        }
+                    }
+                    LOG.debug("result from R (" + performanceValueName + ") : " + values[thresholdGEZero]);
+                    measure.addValue(performanceValueName, values[thresholdGEZero]);
+                }
             }
 
         }
-
-        catch (
-                Exception e
-                )
-
-        {
+        catch (Exception e) {
             // connection error or otherwise me
             LOG.warn(
                     "Cannot evaluate performance measure " + performanceValueName + ". Make sure Rserve (R server) is configured and running.",
@@ -361,6 +382,22 @@ public class CrossValidation {
                 connectionPool.returnConnection(connection);
             }
         }
+    }
+
+    private static double[] toDoubles(RList rList) {
+        Iterator it = rList.iterator();
+        DoubleList doubles = new DoubleArrayList();
+        while (it.hasNext()) {
+            Object o = it.next();
+            if (o instanceof REXPDouble) {
+                try {
+                    doubles.add(((REXPDouble) o).asDouble());
+                } catch (REXPMismatchException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return doubles.toDoubleArray();
     }
 
     /**
