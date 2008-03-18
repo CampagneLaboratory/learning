@@ -22,10 +22,7 @@ import edu.cornell.med.icb.learning.ClassificationProblem;
 import edu.cornell.med.icb.learning.Classifier;
 import edu.mssm.crover.tables.writers.ClassificationModel;
 import edu.mssm.crover.tables.writers.ClassificationParameters;
-import libsvm.svm;
-import libsvm.svm_model;
-import libsvm.svm_problem;
-import libsvm.svm_parameter;
+import libsvm.*;
 import it.unimi.dsi.fastutil.io.TextIO;
 import org.apache.log4j.Logger;
 import org.apache.commons.lang.ArrayUtils;
@@ -65,9 +62,13 @@ public class LibSvmClassifier implements Classifier {
         if ((model.param.svm_type == svm_parameter.C_SVC || model.param.svm_type == svm_parameter.NU_SVC) &&
                 model.probA != null && model.probB != null) {
             LOG.debug("estimating probabilities");
+            final svm_problem nativeProblem = getNativeProblem(problem);
+            if (LOG.isTraceEnabled()) {
+                printNodes(instanceIndex, nativeProblem);
+            }
             // the SVM was trained to estimate probabilities. Return estimated probabilities.
             double decision = svm.svm_predict_probability(getNativeModel(trainingModel),
-                    getNativeProblem(problem).x[instanceIndex],
+                    nativeProblem.x[instanceIndex],
                     probabilities);
             LOG.debug("decision values: " + ArrayUtils.toString(probabilities));
             return decision;
@@ -75,18 +76,28 @@ public class LibSvmClassifier implements Classifier {
             // Regular SVM was not trained to estimate probability. Report the decision function in place of estimated
             // probabilities.
             LOG.debug("substituing decision values for probabilities. The SVM was not trained to estimate probabilities.");
-            svm.svm_predict_values(getNativeModel(trainingModel), getNativeProblem(problem).x[instanceIndex], probabilities);
-            probabilities[0]=Math.abs(probabilities[0]);
+            final svm_problem nativeProblem = getNativeProblem(problem);
+            if (LOG.isTraceEnabled()) {
+                printNodes(instanceIndex, nativeProblem);
+            }
+            svm.svm_predict_values(getNativeModel(trainingModel), nativeProblem.x[instanceIndex], probabilities);
+            probabilities[0] = Math.abs(probabilities[0]);
             probabilities[1] = Double.NEGATIVE_INFINITY; // make sure probs[0] is max of the two values.
             LOG.debug("decision values: " + ArrayUtils.toString(probabilities));
             double decision = svm.svm_predict(getNativeModel(trainingModel), getNativeProblem(problem).x[instanceIndex]);
-      
+
 
             return decision;
 
 
         }
 
+    }
+
+    private void printNodes(int instanceIndex, svm_problem nativeProblem) {
+        for (svm_node node : nativeProblem.x[instanceIndex]) {
+            LOG.trace(String.format("feature index: %d value: %f", node.index, node.value));
+        }
     }
 
     public ClassificationParameters getParameters() {
