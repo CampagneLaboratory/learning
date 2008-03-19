@@ -20,32 +20,33 @@
 package edu.cornell.med.icb.learning;
 
 import cern.jet.random.engine.RandomEngine;
+import edu.cornell.med.icb.R.RConnectionPool;
 import edu.mssm.crover.tables.writers.ClassificationModel;
 import edu.mssm.crover.tables.writers.ContingencyTable;
 import edu.mssm.crover.tables.writers.RandomAdapter;
 import edu.mssm.crover.tools.svmlight.EvaluationMeasure;
-import edu.cornell.med.icb.R.RConnectionPool;
-import it.unimi.dsi.fastutil.doubles.*;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import it.unimi.dsi.fastutil.doubles.DoubleArraySet;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
+import it.unimi.dsi.fastutil.doubles.DoubleSet;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.objects.ObjectSet;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.rosuda.REngine.REXP;
-import org.rosuda.REngine.RList;
 import org.rosuda.REngine.REXPDouble;
 import org.rosuda.REngine.REXPMismatchException;
+import org.rosuda.REngine.RList;
 import org.rosuda.REngine.Rserve.RConnection;
-import org.rosuda.REngine.Rserve.RserveException;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.Iterator;
-import java.io.File;
 
 /**
  * Performs cross-validation for a configurable classifier.
@@ -69,7 +70,7 @@ public class CrossValidation {
      *                    rpp,  rnp, phi, mat, mi, chisq, odds, lift, f, rch,  auc, prbe, cal,  mxe, rmse, sar, ecost, cost
      *                    See the ROCR documentation for definition of these measures.
      */
-    public void evaluateMeasure(CharSequence measureName) {
+    public void evaluateMeasure(final CharSequence measureName) {
         evaluationMeasureNames.add(measureName);
     }
 
@@ -79,7 +80,7 @@ public class CrossValidation {
      *
      * @param repeatNumber
      */
-    public void setRepeatNumber(int repeatNumber) {
+    public void setRepeatNumber(final int repeatNumber) {
         assert repeatNumber >= 1 : "Number of repeats must be at least one.";
 
         this.repeatNumber = repeatNumber;
@@ -136,7 +137,9 @@ public class CrossValidation {
      * @param trueLabels label=0 encodes the first class, label=1 the second class.
      * @return
      */
-    public static EvaluationMeasure testSetEvaluation(double decisions[], double trueLabels[], ObjectSet<CharSequence> evaluationMeasureNames) {
+    public static EvaluationMeasure testSetEvaluation(final double[] decisions,
+                                                      final double[] trueLabels,
+                                                      final ObjectSet<CharSequence> evaluationMeasureNames) {
         final ContingencyTable ctable = new ContingencyTable();
         assert decisions.length == trueLabels.length : "decision and label arrays must have the same length.";
         for (int i = 0; i < trueLabels.length; i++) {
@@ -200,7 +203,7 @@ public class CrossValidation {
      *
      * @param calculate If True, use an RServer to evaluate area under the roc curve. If False, skip the calculation.
      */
-    public void setCalculateROC(boolean calculate) {
+    public void setCalculateROC(final boolean calculate) {
         this.calculateROC = calculate;
     }
 
@@ -230,7 +233,7 @@ public class CrossValidation {
         if (LOG.isDebugEnabled()) {
             LOG.debug("labels: " + ArrayUtils.toString(labels));
         }
-        Double shortCircuitValue = areaUnderRocCurvShortCircuit(decisionValues, labels);
+        final Double shortCircuitValue = areaUnderRocCurvShortCircuit(decisionValues, labels);
         if (shortCircuitValue != null) {
             return shortCircuitValue;
         }
@@ -252,7 +255,7 @@ public class CrossValidation {
             // perf.svm <- performance(pred.svm, 'auc')
             // attr(perf.svm,"y.values")[[1]]
 
-            StringBuffer rCommand = new StringBuffer();
+            final StringBuilder rCommand = new StringBuilder();
             rCommand.append("library(ROCR)\n");
             rCommand.append("flabels <- factor(labels,c(0,1))\n");
             rCommand.append("pred.svm <- prediction(predictions, labels)\n");
@@ -287,8 +290,8 @@ public class CrossValidation {
      * @see #evaluateMeasure
      */
     public static void evaluateWithROCR(final double[] decisionValues, final double[] labels,
-                                        ObjectSet<CharSequence> measureNames,
-                                        EvaluationMeasure measure) {
+                                        final ObjectSet<CharSequence> measureNames,
+                                        final EvaluationMeasure measure) {
 
         assert decisionValues.length == labels.length
                 : "number of predictions must match number of labels.";
@@ -325,7 +328,7 @@ public class CrossValidation {
             // perf.svm <- performance(pred.svm, 'auc')
             // attr(perf.svm,"y.values")[[1]]
 
-            StringBuffer rCommand = new StringBuffer();
+            final StringBuilder rCommand = new StringBuilder();
             rCommand.append("library(ROCR)\n");
             rCommand.append("flabels <- labels\n");
             rCommand.append("pred.svm <- prediction(predictions, labels)\n");
@@ -334,9 +337,11 @@ public class CrossValidation {
 
             for (ObjectIterator<CharSequence> charSequenceObjectIterator = measureNames.iterator();
                  charSequenceObjectIterator.hasNext();) {
-                StringBuffer rCommandMeasure = new StringBuffer();
+                final StringBuilder rCommandMeasure = new StringBuilder();
                 performanceValueName = charSequenceObjectIterator.next();
-                rCommandMeasure.append("perf.svm <- performance(pred.svm, '" + performanceValueName + "')\n");
+                rCommandMeasure.append("perf.svm <- performance(pred.svm, '");
+                rCommandMeasure.append(performanceValueName);
+                rCommandMeasure.append("')\n");
                 rCommandMeasure.append("attr(perf.svm,\"y.values\")[[1]]");
                 final REXP expressionValue = connection.eval(rCommandMeasure.toString());
 
@@ -348,10 +353,10 @@ public class CrossValidation {
                     measure.addValue(performanceValueName, values[0]);
                 } else {
                     // we have one performance measure value per decision threshold.
-                    StringBuffer rCommandThresholds = new StringBuffer();
+                    final StringBuilder rCommandThresholds = new StringBuilder();
                     rCommandThresholds.append("attr(perf.svm,\"x.values\")[[1]]");
                     final REXP expressionThresholds = connection.eval(rCommandThresholds.toString());
-                    double[] thresholds = expressionThresholds.asDoubles();
+                    final double[] thresholds = expressionThresholds.asDoubles();
 
                     // find the index of x.value which indicates a threshold more or equal to zero (for the decision value)
                     int thresholdGEZero = -1;
@@ -361,23 +366,20 @@ public class CrossValidation {
                             break;
                         }
                     }
-                    LOG.debug("result from R (" + performanceValueName + ") : " + values[thresholdGEZero]);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("result from R (" + performanceValueName + ") : "
+                                + values[thresholdGEZero]);
+                    }
                     measure.addValue(performanceValueName, values[thresholdGEZero]);
                 }
             }
-
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // connection error or otherwise me
             LOG.warn(
                     "Cannot evaluate performance measure " + performanceValueName + ". Make sure Rserve (R server) is configured and running.",
                     e);
             measure.addValue(performanceValueName, Double.NaN);
-        }
-
-        finally
-
-        {
+        } finally {
             if (connection != null) {
                 connectionPool.returnConnection(connection);
             }
@@ -413,8 +415,8 @@ public class CrossValidation {
     public static Double areaUnderRocCurvShortCircuit(
             final double[] decisionValues, final double[] labels) {
 
-        VectorDetails decisionValueDetails = new VectorDetails(decisionValues);
-        VectorDetails labelDetails = new VectorDetails(labels);
+        final VectorDetails decisionValueDetails = new VectorDetails(decisionValues);
+        final VectorDetails labelDetails = new VectorDetails(labels);
 
         Double shortCircuitValue = null;
         String debugStr = null;
@@ -453,7 +455,6 @@ public class CrossValidation {
      * @param decisionValues Decision values output by classifier. Larger values indicate more confidence in prediction
      *                       of a positive label.
      * @param labels         Correct label for item, can be 0 (negative class) or +1 (positive class).
-     * @return rocCurvefilename where a PDF of the ROC curve has been written.
      */
     public static void plotRocCurveLOO(final double[] decisionValues, final double[] labels, final String rocCurvefilename) {
         assert decisionValues.length == labels.length : "number of predictions must match number of labels.";
@@ -615,7 +616,7 @@ public class CrossValidation {
      * @param k Number of folds
      * @return An array where each element is the index of the fold to which the given instance of the training set belongs.
      */
-    private int[] assignFolds(int k) {
+    private int[] assignFolds(final int k) {
         final IntList indices = new IntArrayList();
         do {
             indices.clear();
@@ -639,18 +640,20 @@ public class CrossValidation {
      * @return True if the fold is invalid (does not have at least two labels represented)
      * @see #assignFolds
      */
-    private boolean invalidFold(IntList indices, int k) {
+    private boolean invalidFold(final IntList indices, final int k) {
         problem.prepareNative();
         for (int currentFoldInspected = 0; currentFoldInspected < k; currentFoldInspected++) {
-            DoubleSet labels = new DoubleArraySet();
+            final DoubleSet labels = new DoubleArraySet();
             int instanceIndex = 0;
-            for (int foldAssigment : indices) {
+            for (final int foldAssigment : indices) {
                 if (foldAssigment == currentFoldInspected) {
                     labels.add(problem.getLabel(instanceIndex));
                 }
                 instanceIndex++;
             }
-            if (labels.size() < 2) return true;
+            if (labels.size() < 2) {
+                return true;
+            }
         }
         return false;
     }
@@ -665,7 +668,9 @@ public class CrossValidation {
     }
 
 
-    public void evaluateMeasures(CharSequence... names) {
-        for (CharSequence name : names) evaluateMeasure(name);
+    public void evaluateMeasures(final CharSequence... names) {
+        for (final CharSequence name : names) {
+            evaluateMeasure(name);
+        }
     }
 }

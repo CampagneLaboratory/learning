@@ -22,10 +22,13 @@ import edu.cornell.med.icb.learning.ClassificationProblem;
 import edu.cornell.med.icb.learning.Classifier;
 import edu.mssm.crover.tables.writers.ClassificationModel;
 import edu.mssm.crover.tables.writers.ClassificationParameters;
-import libsvm.*;
-import it.unimi.dsi.fastutil.io.TextIO;
-import org.apache.log4j.Logger;
+import libsvm.svm;
+import libsvm.svm_model;
+import libsvm.svm_node;
+import libsvm.svm_parameter;
+import libsvm.svm_problem;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.log4j.Logger;
 
 /**
  * @author Fabien Campagne Date: Nov 20, 2007 Time: 5:24:27 PM
