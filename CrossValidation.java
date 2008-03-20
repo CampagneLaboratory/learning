@@ -191,7 +191,9 @@ public class CrossValidation {
         ctable.average();
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
 
-        evaluateWithROCR(decisionValues, labels, evaluationMeasureNames, measure);
+        if (calculateROC) {
+            evaluateWithROCR(decisionValues, labels, evaluationMeasureNames, measure);
+        }
 
         return measure;
     }
@@ -292,6 +294,7 @@ public class CrossValidation {
     public static void evaluateWithROCR(final double[] decisionValues, final double[] labels,
                                         final ObjectSet<CharSequence> measureNames,
                                         final EvaluationMeasure measure) {
+
 
         assert decisionValues.length == labels.length
                 : "number of predictions must match number of labels.";
@@ -594,7 +597,9 @@ public class CrossValidation {
                 ctableMicro.average();
                 f1Values.add(ctableMicro.getF1Measure());
                 double aucForOneFold = Double.NaN;
-                evaluateWithROCR(decisionValues, labels, evaluationMeasureNames, measure);
+                if (calculateROC) {
+                    evaluateWithROCR(decisionValues, labels, evaluationMeasureNames, measure);
+                }
 
                 aucValues.add(aucForOneFold);
             }
