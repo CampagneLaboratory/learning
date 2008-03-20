@@ -94,6 +94,7 @@ public class CrossValidation {
         this.problem = problem;
         this.randomAdapter = new RandomAdapter(randomEngine);
         evaluateMeasure("auc");
+        this.setCalculateROC(true);
     }
 
     public ClassificationModel trainModel() {
