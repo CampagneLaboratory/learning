@@ -160,8 +160,11 @@ public class CrossValidation {
         }
         ctable.average();
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
-        evaluateWithROCR(decisions, trueLabels, evaluationMeasureNames, measure);
-
+     try {
+       evaluateWithROCR(decisions, trueLabels, evaluationMeasureNames, measure);
+     } catch (Exception e) {
+         LOG.warn("cannot evaluate with ROCR");
+     }
         return measure;
     }
 
