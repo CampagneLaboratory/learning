@@ -22,7 +22,8 @@ import edu.cornell.med.icb.learning.ClassificationProblem;
 import edu.cornell.med.icb.learning.Classifier;
 import edu.mssm.crover.tables.writers.ClassificationModel;
 import edu.mssm.crover.tables.writers.ClassificationParameters;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import weka.core.Instances;
 
 /**
@@ -32,7 +33,7 @@ public class WekaClassifier implements Classifier {
 
     private weka.classifiers.Classifier delegate;
     private WekaParameters defaultParameters;
-    public static Logger log = Logger.getLogger(WekaClassifier.class);
+    private static final Log LOG = LogFactory.getLog(WekaClassifier.class);
     private final double[] labelIndex2LabelValue = {-1d, 1d};
 
     public WekaClassifier(
@@ -63,7 +64,7 @@ public class WekaClassifier implements Classifier {
             delegate.buildClassifier(getWekaProblem(problem));
             return new WekaModel(this);
         } catch (Exception e) {
-            log.error("Weka classifier has thrown exception.", e);
+            LOG.error("Weka classifier has thrown exception.", e);
             return null;
         }
     }
@@ -79,11 +80,11 @@ public class WekaClassifier implements Classifier {
                 assert newInstance instanceof weka.classifiers.Classifier : "weka classifier must implement weka.classifiers.Classifier";
                 delegate = (weka.classifiers.Classifier) newInstance;
             } catch (ClassNotFoundException e) {
-                log.error("Cannot find class for weka classifier classname=" + wekaClassifierClassName, e);
+                LOG.error("Cannot find class for weka classifier classname=" + wekaClassifierClassName, e);
             } catch (IllegalAccessException e) {
-                log.error(e);
+                LOG.error(e);
             } catch (InstantiationException e) {
-                log.error(e);
+                LOG.error(e);
             }
 
         }
@@ -106,7 +107,7 @@ public class WekaClassifier implements Classifier {
             return labelIndex2LabelValue[(int) getWekaClassifier(this, trainingModel)
                     .classifyInstance(getWekaProblem(problem).instance(instanceIndex))];
         } catch (Exception e) {
-            log.error("Weka classifier has thrown exception.", e);
+            LOG.error("Weka classifier has thrown exception.", e);
             return Double.NaN;
         }
     }
@@ -130,7 +131,7 @@ public class WekaClassifier implements Classifier {
             }
             return labelIndex2LabelValue[maxIndex];
         } catch (Exception e) {
-            log.error("Weka classifier has thrown exception.", e);
+            LOG.error("Weka classifier has thrown exception.", e);
             return Double.NaN;
         }
     }

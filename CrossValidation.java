@@ -36,7 +36,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPDouble;
 import org.rosuda.REngine.REXPMismatchException;
@@ -53,7 +54,7 @@ import java.util.Iterator;
  * @author Fabien Campagne Date: Feb 28, 2006 Time: 3:33:37 PM
  */
 public class CrossValidation {
-    private static final Logger LOG = Logger.getLogger(CrossValidation.class);
+    private static final Log LOG = LogFactory.getLog(CrossValidation.class);
 
     private ClassificationModel model;
     Classifier classifier;

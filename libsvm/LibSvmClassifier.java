@@ -28,7 +28,8 @@ import libsvm.svm_node;
 import libsvm.svm_parameter;
 import libsvm.svm_problem;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * @author Fabien Campagne Date: Nov 20, 2007 Time: 5:24:27 PM
@@ -36,7 +37,7 @@ import org.apache.log4j.Logger;
 public class LibSvmClassifier implements Classifier {
     protected LibSvmParameters parameters;
 
-    private static final Logger LOG = Logger.getLogger(LibSvmClassifier.class);
+    private static final Log LOG = LogFactory.getLog(LibSvmClassifier.class);
 
     public LibSvmClassifier() {
         this.parameters = new LibSvmParameters();
@@ -78,7 +79,7 @@ public class LibSvmClassifier implements Classifier {
         } else {
             // Regular SVM was not trained to estimate probability. Report the decision function in place of estimated
             // probabilities.
-            LOG.debug("substituing decision values for probabilities. The SVM was not trained to estimate probabilities.");
+            LOG.debug("substituting decision values for probabilities. The SVM was not trained to estimate probabilities.");
             final svm_problem nativeProblem = getNativeProblem(problem);
             if (LOG.isTraceEnabled()) {
                 printNodes(instanceIndex, nativeProblem);
@@ -88,13 +89,8 @@ public class LibSvmClassifier implements Classifier {
             probabilities[1] = Double.NEGATIVE_INFINITY; // make sure probs[0] is max of the two values.
             LOG.debug("decision values: " + ArrayUtils.toString(probabilities));
             double decision = svm.svm_predict(getNativeModel(trainingModel), getNativeProblem(problem).x[instanceIndex]);
-
-
             return decision;
-
-
         }
-
     }
 
     private void printNodes(int instanceIndex, svm_problem nativeProblem) {
