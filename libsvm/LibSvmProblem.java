@@ -106,7 +106,7 @@ public class LibSvmProblem implements ClassificationProblem {
         return new LibSvmProblem(reducedProblem);
     }
 
-    public void setInstance(final int instanceIndex, final double label, final double features[]) {
+    public void setInstance(final int instanceIndex, final double label, final double[] features) {
         setLabel(instanceIndex, label);
         for (int featureIndex = 0; featureIndex < features.length; featureIndex++) {
 

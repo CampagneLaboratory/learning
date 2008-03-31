@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2001-2002 Mount Sinai School of Medicine
- * Copyright (C) 2003-2008 Institute for Computational Biomedicine,
+ * Copyright (C) 2006-2008 Institute for Computational Biomedicine,
  *                         Weill Medical College of Cornell University
  *
  *  This program is free software; you can redistribute it and/or modify

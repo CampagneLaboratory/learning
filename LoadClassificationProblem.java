@@ -30,8 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import it.unimi.dsi.fastutil.io.TextIO;
-
 /**
  * A class to construct a classification problem from features/labels in a table.
  *
@@ -65,7 +63,7 @@ public class LoadClassificationProblem {
      * Feature disabled.
      */
     final boolean shuffle = false;
-    final protected int[] shuffledLabels = null;
+    protected final int[] shuffledLabels = null;
 
 
     public void load(final ClassificationProblem problem, final Table table, final String labelColumnIdf,
@@ -142,7 +140,7 @@ public class LoadClassificationProblem {
     public void load(final ClassificationProblem problem, final Table table) throws InvalidColumnException, TypeMismatchException {
         currentRowIndex = 0;
         final RowProcessor rowProcessor = new RowProcessor(RowProcessor.buildColumnIndices(table, null)) {
-            
+
             public void processRow(final Table table, final Table.RowIterator ri)
                     throws TypeMismatchException, InvalidColumnException {
 

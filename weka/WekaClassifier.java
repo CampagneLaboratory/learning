@@ -33,7 +33,7 @@ public class WekaClassifier implements Classifier {
     private weka.classifiers.Classifier delegate;
     private WekaParameters defaultParameters;
     public static Logger log = Logger.getLogger(WekaClassifier.class);
-    final private double[] labelIndex2LabelValue = {-1d, 1d};
+    private final double[] labelIndex2LabelValue = {-1d, 1d};
 
     public WekaClassifier(
             final weka.classifiers.Classifier delegate) {
