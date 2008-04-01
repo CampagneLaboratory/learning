@@ -28,10 +28,7 @@ import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleArraySet;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.doubles.DoubleSet;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntArraySet;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
@@ -160,11 +157,11 @@ public class CrossValidation {
         }
         ctable.average();
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
-     try {
-       evaluateWithROCR(decisions, trueLabels, evaluationMeasureNames, measure);
-     } catch (Exception e) {
-         LOG.warn("cannot evaluate with ROCR");
-     }
+        try {
+            evaluateWithROCR(decisions, trueLabels, evaluationMeasureNames, measure);
+        } catch (Exception e) {
+            LOG.warn("cannot evaluate with ROCR");
+        }
         return measure;
     }
 
@@ -574,7 +571,12 @@ public class CrossValidation {
                     }
                 }
                 assert testSet.size() + trainingSet.size() == problem.getSize() : "test set and training set size must add to whole problem size.";
+                IntSet intersection = new IntOpenHashSet();
+                intersection.addAll(trainingSet);
+                intersection.retainAll(testSet);
+                assert intersection.size() == 0 : "test set and training set must never overlap";
                 final ClassificationProblem currentTrainingSet = problem.filter(trainingSet);
+                assert currentTrainingSet.getSize()==trainingSet.size() : "Problem size must match size of training set";
                 final ClassificationModel looModel = classifier.train(currentTrainingSet);
                 final ContingencyTable ctableMicro = new ContingencyTable();
 
