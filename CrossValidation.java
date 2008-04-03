@@ -58,6 +58,8 @@ public class CrossValidation {
     ClassificationProblem problem;
     ObjectSet<CharSequence> evaluationMeasureNames = new ObjectArraySet<CharSequence>();
 
+    private Class<? extends FeatureScaler> featureScalerClass;
+
     /**
      * Request evaluation of the given performance measure.
      *
@@ -175,18 +177,28 @@ public class CrossValidation {
         final ContingencyTable ctable = new ContingencyTable();
         final double[] decisionValues = new double[problem.getSize()];
         final double[] labels = new double[problem.getSize()];
+        //TODO enable independent train/test scaling
+        //            FeatureScaler scaler = resetScaler();
+        final double[] probs = {0d, 0d};
 
-        for (int i = 0; i < problem.getSize(); i++) {   // for each training example, leave it out:
+        for (int testInstanceIndex = 0; testInstanceIndex < problem.getSize(); testInstanceIndex++)
+        {   // for each training example, leave it out:
 
-            final ClassificationProblem looProblem = problem.filter(i);
-            final ClassificationModel looModel = classifier.train(looProblem);
-            final double decision = classifier.predict(looModel, problem, i);
-            final double trueLabel = problem.getLabel(i);
-            decisionValues[i] = decision;
-            labels[i] = trueLabel;
+            final ClassificationProblem currentTrainingSet = problem.exclude(testInstanceIndex);
+            //TODO enable independent train/test scaling
+            //      ClassificationProblem scaledTrainingSet = currentTrainingSet.scaleTraining(scaler);
+
+            final ClassificationModel looModel = classifier.train(currentTrainingSet);
+            //TODO enable independent train/test scaling
+            ClassificationProblem oneScaledTestInstanceProblem = problem.filter(testInstanceIndex);
+            //    ClassificationProblem oneScaledTestInstanceProblem = problem.scaleTestSet(scaler, testInstanceIndex);
+
+            final double decision = classifier.predict(looModel, oneScaledTestInstanceProblem, 0, probs);
+            final double trueLabel = problem.getLabel(testInstanceIndex);
+            decisionValues[testInstanceIndex] = decision;
+            labels[testInstanceIndex] = trueLabel;
             final int binaryDecision = decision < 0 ? -1 : 1;
             ctable.observeDecision(trueLabel, binaryDecision);
-
 
         }
         ctable.average();
@@ -559,6 +571,8 @@ public class CrossValidation {
         for (int r = 0; r < repeatNumber; r++) {
             assert k <= problem.getSize() : "Number of folds must be less or equal to number of training examples.";
             final int[] foldIndices = assignFolds(k);
+            //TODO enable independent train/test scaling
+            //            FeatureScaler scaler = resetScaler();
 
             for (int f = 0; f < k; ++f) { // use each fold as test set while the others are the training set:
                 final IntSet trainingSet = new IntArraySet();
@@ -576,8 +590,12 @@ public class CrossValidation {
                 intersection.retainAll(testSet);
                 assert intersection.size() == 0 : "test set and training set must never overlap";
                 final ClassificationProblem currentTrainingSet = problem.filter(trainingSet);
-                assert currentTrainingSet.getSize()==trainingSet.size() : "Problem size must match size of training set";
-                final ClassificationModel looModel = classifier.train(currentTrainingSet);
+                assert currentTrainingSet.getSize() == trainingSet.size() : "Problem size must match size of training set";
+                //TODO enable independent train/test scaling
+                //      ClassificationProblem scaledTrainingSet = currentTrainingSet.scaleTraining(scaler);
+                ClassificationProblem scaledTrainingSet = currentTrainingSet;
+
+                final ClassificationModel looModel = classifier.train(scaledTrainingSet);
                 final ContingencyTable ctableMicro = new ContingencyTable();
 
                 final double[] decisionValues = new double[testSet.size()];
@@ -585,8 +603,11 @@ public class CrossValidation {
                 int index = 0;
                 final double[] probs = {0d, 0d};
                 for (final int testInstanceIndex : testSet) {  // for each test example:
-
-                    final double decision = classifier.predict(looModel, problem, testInstanceIndex, probs);
+                    //TODO enable independent train/test scaling
+                    ClassificationProblem oneScaledTestInstanceProblem = problem.filter(testInstanceIndex);
+                    assert oneScaledTestInstanceProblem.getSize()==1 : "filtered test problem must have one instance left (size was "+oneScaledTestInstanceProblem.getSize()+").";
+                    //    ClassificationProblem oneScaledTestInstanceProblem = problem.scaleTestSet(scaler, testInstanceIndex);
+                    final double decision = classifier.predict(looModel, oneScaledTestInstanceProblem, 0, probs);
                     final double trueLabel = problem.getLabel(testInstanceIndex);
                     double maxProb;
 
@@ -616,6 +637,18 @@ public class CrossValidation {
         //  measure.setRocAucValues(aucValues);
         measure.setF1Values(f1Values);
         return measure;
+    }
+
+    private FeatureScaler resetScaler() {
+        try {
+            return featureScalerClass.newInstance();
+        } catch (InstantiationException e) {
+            LOG.error("Cannot instanciate feature scaler", e);
+            return null;
+        } catch (IllegalAccessException e) {
+            LOG.error("Cannot create feature scaler", e);
+            return null;
+        }
     }
 
     /**
@@ -683,5 +716,9 @@ public class CrossValidation {
         for (final CharSequence name : names) {
             evaluateMeasure(name);
         }
+    }
+
+    public void setScalerClass(Class<? extends FeatureScaler> featureScalerClass) {
+        this.featureScalerClass = featureScalerClass;
     }
 }

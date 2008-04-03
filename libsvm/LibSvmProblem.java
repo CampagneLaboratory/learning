@@ -19,9 +19,12 @@
 package edu.cornell.med.icb.learning.libsvm;
 
 import edu.cornell.med.icb.learning.ClassificationProblem;
+import edu.cornell.med.icb.learning.FeatureScaler;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import libsvm.svm_node;
@@ -45,6 +48,7 @@ public class LibSvmProblem implements ClassificationProblem {
 
     public LibSvmProblem(final svm_problem reducedProblem) {
         this.problem = reducedProblem;
+       
     }
 
     public double getLabel(final int instanceIndex) {
@@ -86,7 +90,7 @@ public class LibSvmProblem implements ClassificationProblem {
         return new LibSvmProblem(reducedProblem);
     }
 
-    public ClassificationProblem filter(final int instanceIndex) {
+    public ClassificationProblem exclude(final int instanceIndex) {
         prepareNative();
         final svm_problem reducedProblem = new svm_problem();
         reducedProblem.l = problem.l
@@ -104,6 +108,12 @@ public class LibSvmProblem implements ClassificationProblem {
         System.arraycopy(problem.y, instanceIndex + 1, reducedProblem.y, instanceIndex,
                 problem.l - instanceIndex - 1);
         return new LibSvmProblem(reducedProblem);
+    }
+
+    public ClassificationProblem filter(int instanceIndex) {
+        IntSet set = new IntArraySet();
+        set.add(instanceIndex);
+        return filter(set);
     }
 
     public void setInstance(final int instanceIndex, final double label, final double[] features) {
@@ -156,8 +166,117 @@ public class LibSvmProblem implements ClassificationProblem {
         }
     }
 
+    /**
+     * Returned a copy of the training set where features have been scaled.
+     *
+     * @param scaler
+     * @return
+     */
+    public ClassificationProblem scaleTraining(FeatureScaler scaler) {
+        prepareNative();
+        IntSet keepInstanceSet = new IntOpenHashSet();
+        for (int index = 0; index < this.problem.l; index++) {
+            keepInstanceSet.add(index);
+        }
+        return scaleFeatures(scaler, keepInstanceSet, true);
+    }
+
+    public ClassificationProblem scaleTestSet(FeatureScaler scaler, int testInstanceIndex) {
+        prepareNative();
+        IntSet instanceIndexSet = new IntArraySet();
+        instanceIndexSet.add(testInstanceIndex);
+        return scaleFeatures(scaler, instanceIndexSet, false);
+    }
+
+    public double[] featureValues(int featureIndex, IntSet keepInstanceSet) {
+        prepareNative();
+        int instanceIndex = 0;
+        DoubleList values = new DoubleArrayList();
+        for (svm_node[] instance : this.problem.x) {
+            if (keepInstanceSet.contains(instanceIndex)) {
+                assert (instance[featureIndex].index == featureIndex) : "feature index must match at array index";
+                values.add(instance[featureIndex].value);
+            }
+            instanceIndex++;
+        }
+        return values.toDoubleArray();
+    }
+
+
+    public ClassificationProblem scaleFeatures(FeatureScaler scaler, IntSet keepInstanceSet, boolean training) {
+        prepareNative();
+        final svm_problem reducedProblem = new svm_problem();
+        // observe each feature to accumulate statistics:
+        int numFeatures = getNumFeatures(problem);
+
+        if (training) {
+            for (int featureIndex = 0; featureIndex < numFeatures; featureIndex++) {
+
+                scaler.observeFeatureForTraining(numFeatures, featureValues(featureIndex, keepInstanceSet), featureIndex);
+            }
+        }
+
+        int problemSize = keepInstanceSet.size();
+        reducedProblem.l = problemSize;                                 // number of records.
+        reducedProblem.x =
+                new svm_node[problemSize][numFeatures];         // features.
+        reducedProblem.y =
+                new double[reducedProblem.l];                  // decision/label
+
+        int j = 0;
+        for (int i = 0; i < problem.x.length; i++) {
+            if (keepInstanceSet.contains(i)) {
+                reducedProblem.x[j] = new svm_node[problem.x[i].length];
+                for (int k = 0; k < problem.x[i].length; k++) {
+
+                    double featureValue = problem.x[i][k].value;
+                    int featureIndex = problem.x[i][k].index;
+                    reducedProblem.x[j][k] = new svm_node();
+                    reducedProblem.x[j][k].value = scaler.scaleFeatureValue(featureValue, featureIndex);
+                    reducedProblem.x[j][k].index = problem.x[i][k].index;
+                    featureIndex++;
+                }
+                j++;
+            }
+
+        }
+
+        j = 0;
+        for (int i = 0; i < problem.y.length; i++) {
+            if (keepInstanceSet.contains(i)) {
+                reducedProblem.y[j++] = problem.y[i];
+            }
+        }
+
+        return new LibSvmProblem(reducedProblem);
+    }
+
+    private int getNumFeatures(svm_problem problem) {
+        int maxFeatureIndex = Integer.MIN_VALUE;
+        int minFeatureIndex = Integer.MAX_VALUE;
+
+        for (svm_node[] instance : problem.x) {
+            for (svm_node feature : instance) {
+                maxFeatureIndex = Math.max(maxFeatureIndex, feature.index);
+                minFeatureIndex = Math.min(minFeatureIndex, feature.index);
+            }
+        }
+        return maxFeatureIndex - minFeatureIndex + 1;
+    }
+
     public svm_problem getNative() {
         prepareNative();
         return problem;
+    }
+
+    public double[] getFeatures(int instanceIndex) {
+
+        DoubleList features = new DoubleArrayList();
+        svm_node[] instance = (problem != null) ? this.problem.x[instanceIndex] : instanceList.get(instanceIndex);
+        for (svm_node feature : instance) {
+            features.add(feature.value);
+        }
+
+        return features.toDoubleArray();
     }
 }

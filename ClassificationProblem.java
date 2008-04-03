@@ -55,14 +55,21 @@ public interface ClassificationProblem {
      * @param instanceIndex Index of the record to exclude.
      * @return Reduced problem.
      */
+    ClassificationProblem exclude(final int instanceIndex);
+     /**
+     * Returns the problem with a single instance included.
+     *
+     * @param instanceIndex Index of the record to include in the filtered problem.
+     * @return Reduced problem.
+     */
     ClassificationProblem filter(final int instanceIndex);
 
     /**
      * Set feature values and label for an instance.
      *
      * @param instanceIndex Index of the instance.
-     * @param label Label for the instance.
-     * @param features Features associated with this instance.
+     * @param label         Label for the instance.
+     * @param features      Features associated with this instance.
      */
     void setInstance(int instanceIndex, double label, double[] features);
 
@@ -70,7 +77,7 @@ public interface ClassificationProblem {
      * Set feature values and label for an instance.
      *
      * @param instanceIndex Index of the instance.
-     * @param label Label for the instance.
+     * @param label         Label for the instance.
      */
     void setLabel(int instanceIndex, double label);
 
@@ -78,8 +85,8 @@ public interface ClassificationProblem {
      * Set feature value for an instance.
      *
      * @param instanceIndex Index of the instance.
-     * @param featureIndex Index of the feature
-     * @param featureValue Value of the feature for the specified instance.
+     * @param featureIndex  Index of the feature
+     * @param featureValue  Value of the feature for the specified instance.
      */
     void setFeature(final int instanceIndex, final int featureIndex, final double featureValue);
 
@@ -96,4 +103,23 @@ public interface ClassificationProblem {
      * called. Feature values and labels can be changed directly however.
      */
     void prepareNative();
+
+    /**
+     * Returns a problem where features have been scaled. This method should be called to prepare a training set.
+     * Typically, the scaler may inspect the training set, determine and cache statistics useful to scale the test set.
+     *
+     * @param scaler The feature scaler engine.
+     * @return A copy of training set with scaled features.
+     */
+    ClassificationProblem scaleTraining(FeatureScaler scaler);
+
+    ClassificationProblem scaleTestSet(FeatureScaler scaler, int testInstanceIndex);
+
+    /**
+     * Returns the values of the feature for a subset of instances of this problem.
+     * @param featureIndex   Index of the feature to collect values for.
+     * @param keepInstanceSet Set of instances to collect over.
+     * @return
+     */
+    double[] featureValues(int featureIndex,final IntSet keepInstanceSet);
 }

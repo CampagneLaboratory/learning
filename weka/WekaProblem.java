@@ -19,12 +19,17 @@
 package edu.cornell.med.icb.learning.weka;
 
 import edu.cornell.med.icb.learning.ClassificationProblem;
+import edu.cornell.med.icb.learning.FeatureScaler;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
 import weka.core.Instances;
+import libsvm.svm_node;
 
 /**
  * @author Fabien Campagne Date: Nov 21, 2007 Time: 6:26:40 PM
@@ -40,10 +45,22 @@ public class WekaProblem implements ClassificationProblem {
     }
 
     public WekaProblem(final WekaProblem wekaProblem, final IntSet keepInstanceSet) {
+        this(wekaProblem, keepInstanceSet, new FeatureScaler());
+    }
+
+    public WekaProblem(final WekaProblem wekaProblem, final IntSet keepInstanceSet,
+                       FeatureScaler scaler) {
         dataset = new Instances(this.toString(), (FastVector) wekaProblem.attributes.copy(), keepInstanceSet.size());
         for (int instanceIndex = 0; instanceIndex < wekaProblem.getSize(); instanceIndex++) {
             if (keepInstanceSet.contains(instanceIndex)) {
-                dataset.add((Instance) wekaProblem.dataset.instance(instanceIndex).copy());
+                Instance copyOfInstance = (Instance) wekaProblem.dataset.instance(instanceIndex).copy();
+
+                int numberOfFeatures = copyOfInstance.numAttributes() - 1;
+                for (int featureIndex = 0; featureIndex < numberOfFeatures; featureIndex++) {
+                    double featureValue = copyOfInstance.value(featureIndex + 1);
+                    copyOfInstance.setValue(featureIndex + 1, scaler.scaleFeatureValue(featureValue, featureIndex));
+                }
+                dataset.add(copyOfInstance);
             }
         }
         this.dataset.setClassIndex(wekaProblem.dataset.classIndex());
@@ -62,7 +79,7 @@ public class WekaProblem implements ClassificationProblem {
 
     }
 
-    public ClassificationProblem filter(final int instanceIndex) {
+    public ClassificationProblem exclude(final int instanceIndex) {
         final IntSet allButOne = new IntArraySet();
         for (int index = 0; index < dataset.numInstances(); index++) {
             if (index != instanceIndex) {
@@ -72,6 +89,11 @@ public class WekaProblem implements ClassificationProblem {
         return new WekaProblem(this, allButOne);
     }
 
+    public ClassificationProblem filter(int instanceIndex) {
+        IntSet set=new IntArraySet();
+        set.add(instanceIndex);
+        return filter(set);
+    }
     public void setInstance(final int instanceIndex, final double label, final double[] features) {
         setLabel(instanceIndex, label);
         for (int featureIndex = 0; featureIndex < features.length; featureIndex++) {
@@ -102,6 +124,45 @@ public class WekaProblem implements ClassificationProblem {
     public void prepareNative() {
         // do nothing. Already stored natively.
     }
+
+    public ClassificationProblem scaleTraining(FeatureScaler scaler) {
+        IntSet allInstances = new IntLinkedOpenHashSet();
+        int numberOfFeatures = 0;
+        for (int i = 0; i < this.dataset.numInstances(); i++) {
+            allInstances.add(i);
+            numberOfFeatures = Math.max(dataset.instance(i).numAttributes() - 1, numberOfFeatures);
+
+        }
+
+        for (int featureIndex = 0; featureIndex < numberOfFeatures; featureIndex++) {
+
+            scaler.observeFeatureForTraining(numberOfFeatures, featureValues(featureIndex, allInstances), featureIndex);
+        }
+        throw new InternalError("This method has not been tested");
+       // return new WekaProblem(this, allInstances, scaler);
+    }
+
+    public ClassificationProblem scaleTestSet(FeatureScaler scaler, int testInstanceIndex) {
+        IntSet allInstances = new IntLinkedOpenHashSet();
+        allInstances.add(testInstanceIndex);
+        throw new InternalError("This method has not been tested");
+      //        return new WekaProblem(this, allInstances, scaler);
+    }
+
+    public double[] featureValues(int featureIndex, IntSet keepInstanceSet) {
+        int instanceIndex = 0;
+        DoubleList values = new DoubleArrayList();
+        for (int InstanceIndex = 0; instanceIndex < dataset.numInstances(); instanceIndex++) {
+            if (keepInstanceSet.contains(instanceIndex)) {
+                int attributeIndex = featureIndex + 1;
+                values.add(dataset.instance(instanceIndex).value(attributeIndex));
+            }
+            instanceIndex++;
+        }
+        throw new InternalError("This method has not been tested");
+      //        return values.toDoubleArray();
+    }
+
 
     private void createDataset(final int maxNumberOfFeatures) {
         if (dataset == null) {
