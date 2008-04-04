@@ -33,6 +33,7 @@ public class WekaParameters extends ClassificationParameters {
 
     private String wekaClassifierClassName;
 
+    @Override
     public void setParameter(final String parameterName, final double value) {
         if (value == value) {
             options.add(parameterName + " " + value);

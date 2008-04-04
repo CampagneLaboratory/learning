@@ -10,13 +10,15 @@ public class MultiplyScalingProcessor extends FeatureScaler {
     private double multiplicationFactor;
 
     public MultiplyScalingProcessor(double multiplier) {
-      this.multiplicationFactor =multiplier;
+        super();
+        this.multiplicationFactor = multiplier;
     }
 
+    @Override
     public void observeFeatureForTraining(int numFeatures, double[] featureValues, int featureIndex) {
-
     }
 
+    @Override
     public double scaleFeatureValue(double featureValue, int featureIndex) {
        return featureValue* multiplicationFactor;
     }

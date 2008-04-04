@@ -86,6 +86,7 @@ public class LoadClassificationProblem {
 
         final RowProcessor rowProcessor = new RowProcessor(RowProcessor.buildColumnIndices(table, null)) {
 
+            @Override
             public void processRow(final Table table, final Table.RowIterator ri)
                     throws TypeMismatchException, InvalidColumnException {
 
@@ -141,6 +142,7 @@ public class LoadClassificationProblem {
         currentRowIndex = 0;
         final RowProcessor rowProcessor = new RowProcessor(RowProcessor.buildColumnIndices(table, null)) {
 
+            @Override
             public void processRow(final Table table, final Table.RowIterator ri)
                     throws TypeMismatchException, InvalidColumnException {
 

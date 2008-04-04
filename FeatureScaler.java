@@ -19,7 +19,6 @@ public class FeatureScaler {
      * @param featureIndex
      */
     public void observeFeatureForTraining(int numFeatures, double[] featureValues, int featureIndex) {
-        return;
     }
 
     public double scaleFeatureValue(double featureValue, int featureIndex) {

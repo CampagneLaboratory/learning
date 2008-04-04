@@ -28,18 +28,18 @@ public class LibSvmParameters extends ClassificationParameters {
     svm_parameter nativeParameters;
 
     public LibSvmParameters(final svm_parameter nativeParameters) {
+        super();
         this.nativeParameters = nativeParameters;
     }
 
     public LibSvmParameters() {
-
+        super();
         nativeParameters = new svm_parameter();
         nativeParameters.kernel_type = svm_parameter.LINEAR;
         registerExposedParameter("kernel=linear");
         registerExposedParameter("kernel=RBF");
         registerExposedParameter("kernel=polynomial");
         registerExposedParameter("kernel=sigmoid");
-
 
         this.nativeParameters.svm_type = svm_parameter.C_SVC;
         registerExposedParameter("machine=SVC");
@@ -80,6 +80,7 @@ public class LibSvmParameters extends ClassificationParameters {
         return nativeParameters;
     }
 
+    @Override
     public void setParameter(final String parameterName, final double value) {
         checkParameterRegistered(parameterName);
         if (parameterName.equals("C")) {

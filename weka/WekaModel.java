@@ -30,16 +30,19 @@ public class WekaModel extends ClassificationModel {
     WekaClassifier classifier;
 
     public WekaModel(final WekaClassifier wekaClassifier) {
+        super();
         classifier = wekaClassifier;
     }
 
     /**
-     * Store the weka model as a serialized object. Not much we can do with it except load it again, but it is not clear
-     * how to save a model into a human-readable format from the Weka API.
+     * Store the weka model as a serialized object. Not much we can do with it except load it
+     * again, but it is not clear how to save a model into a human-readable format from the
+     * Weka API.
      *
      * @param filename Filename to use to save the model.
      * @throws IOException
      */
+    @Override
     public void write(final String filename) throws IOException {
         BinIO.storeObject(classifier.getNative(), filename);
     }
