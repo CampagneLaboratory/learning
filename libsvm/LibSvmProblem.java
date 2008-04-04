@@ -22,9 +22,9 @@ import edu.cornell.med.icb.learning.ClassificationProblem;
 import edu.cornell.med.icb.learning.FeatureScaler;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
-import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import libsvm.svm_node;
@@ -48,7 +48,7 @@ public class LibSvmProblem implements ClassificationProblem {
 
     public LibSvmProblem(final svm_problem reducedProblem) {
         this.problem = reducedProblem;
-       
+
     }
 
     public double getLabel(final int instanceIndex) {
