@@ -18,9 +18,6 @@
 
 package edu.cornell.med.icb.learning;
 
-import edu.mssm.crover.tables.writers.ClassificationModel;
-import edu.mssm.crover.tables.writers.ClassificationParameters;
-
 /**
  * @author Fabien Campagne
  */

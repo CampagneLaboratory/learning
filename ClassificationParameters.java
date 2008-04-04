@@ -16,30 +16,31 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package edu.cornell.med.icb.learning.libsvm;
+package edu.cornell.med.icb.learning;
 
-import edu.cornell.med.icb.learning.ClassificationModel;
-import libsvm.svm;
-import libsvm.svm_model;
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 
-import java.io.IOException;
+import java.util.Set;
 
 /**
- * @author Fabien Campagne Date: Nov 20, 2007 Time: 5:35:52 PM
+ * Abstracts the parameters of a machine learning classifier.
+ *
+ * @author Fabien Campagne Date: Nov 19, 2007 Time: 9:29:24 AM
  */
-public class LibSvmModel extends ClassificationModel {
-    svm_model nativeModel;
+public abstract class ClassificationParameters {
+    Set<String> parameterNames;
 
-    public LibSvmModel(final svm_model svm_model) {
-        this.nativeModel = svm_model;
+    public abstract void setParameter(final String parameterName, final double value);
+
+    public Set<String> getExposedParameterNames() {
+        return parameterNames;
     }
 
-    public LibSvmModel(final String modelFilename) throws IOException {
-        nativeModel = svm.svm_load_model(modelFilename);
+    protected ClassificationParameters() {
+        this.parameterNames = new ObjectArraySet<String>();
     }
 
-    @Override
-    public void write(final String filename) throws IOException {
-        svm.svm_save_model(filename, nativeModel);
+    public void registerExposedParameter(final String parameterName) {
+        parameterNames.add(parameterName);
     }
 }

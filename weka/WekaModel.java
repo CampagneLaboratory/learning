@@ -18,7 +18,7 @@
 
 package edu.cornell.med.icb.learning.weka;
 
-import edu.mssm.crover.tables.writers.ClassificationModel;
+import edu.cornell.med.icb.learning.ClassificationModel;
 import it.unimi.dsi.fastutil.io.BinIO;
 
 import java.io.IOException;

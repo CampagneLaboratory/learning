@@ -20,10 +20,8 @@ package edu.cornell.med.icb.learning;
 
 import cern.jet.random.engine.RandomEngine;
 import edu.cornell.med.icb.R.RConnectionPool;
-import edu.mssm.crover.tables.writers.ClassificationModel;
-import edu.mssm.crover.tables.writers.ContingencyTable;
-import edu.mssm.crover.tables.writers.RandomAdapter;
 import edu.cornell.med.icb.tools.svmlight.EvaluationMeasure;
+import edu.cornell.med.icb.util.RandomAdapter;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleArraySet;
 import it.unimi.dsi.fastutil.doubles.DoubleList;

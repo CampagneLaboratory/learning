@@ -18,10 +18,10 @@
 
 package edu.cornell.med.icb.learning.weka;
 
+import edu.cornell.med.icb.learning.ClassificationModel;
+import edu.cornell.med.icb.learning.ClassificationParameters;
 import edu.cornell.med.icb.learning.ClassificationProblem;
 import edu.cornell.med.icb.learning.Classifier;
-import edu.mssm.crover.tables.writers.ClassificationModel;
-import edu.mssm.crover.tables.writers.ClassificationParameters;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import weka.core.Instances;

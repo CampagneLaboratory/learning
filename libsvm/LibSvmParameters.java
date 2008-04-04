@@ -18,7 +18,7 @@
 
 package edu.cornell.med.icb.learning.libsvm;
 
-import edu.mssm.crover.tables.writers.ClassificationParameters;
+import edu.cornell.med.icb.learning.ClassificationParameters;
 import libsvm.svm_parameter;
 
 /**

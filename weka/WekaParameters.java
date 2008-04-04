@@ -18,7 +18,7 @@
 
 package edu.cornell.med.icb.learning.weka;
 
-import edu.mssm.crover.tables.writers.ClassificationParameters;
+import edu.cornell.med.icb.learning.ClassificationParameters;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
