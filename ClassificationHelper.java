@@ -35,7 +35,8 @@ public class ClassificationHelper {
         for (final String parameter : classifierParameters) {
             final double value = getParameterValue(parameter);
             final String key = getParameterKey(parameter);
-            System.out.println("Setting parameter " + parameter);
+            
+            //  System.out.println("Setting parameter " + parameter);
             classifier.getParameters().setParameter(key, value);
             this.parameters=classifier.getParameters();
         }
