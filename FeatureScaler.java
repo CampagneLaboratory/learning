@@ -18,6 +18,12 @@
 
 package edu.cornell.med.icb.learning;
 
+import it.unimi.dsi.mg4j.util.MutableString;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import edu.mssm.crover.tables.Table;
+import edu.mssm.crover.tables.TypeMismatchException;
+import edu.mssm.crover.tables.InvalidColumnException;
+
 /**
  * This default implementation does not scale features at all. Sub-classes must implement the
  * scaling strategy by overriding the scaler methods.
@@ -43,4 +49,38 @@ public class FeatureScaler {
     public double scaleFeatureValue(double featureValue, int featureIndex) {
         return featureValue;
     }
+
+    protected Object2DoubleMap<MutableString> probesetScaleRangeMap;
+    protected Object2DoubleMap<MutableString> probesetScaleMeanMap;
+    protected boolean training;
+
+    /**
+     * Instruct to scale a training set. While training, mean and range of un-scaled features are collected.  Results are
+     * stored in the maps passed as parameters.
+     *
+     * @param probesetScaleMeanMap
+     * @param probesetScaleRangeMap
+     */
+    public void setTrainingMode(Object2DoubleMap<MutableString> probesetScaleMeanMap, Object2DoubleMap<MutableString> probesetScaleRangeMap) {
+        this.probesetScaleMeanMap = probesetScaleMeanMap;
+        this.probesetScaleRangeMap = probesetScaleRangeMap;
+        training = true;
+
+    }
+
+    /**
+     * Instruct to scale a test set. While testing, mean and range of un-scaled features are read directly from the
+     * maps passed as parameters. They are not estimated from the dataset.
+     *
+     * @param probesetScaleMeanMap
+     * @param probesetScaleRangeMap
+     */
+    public void setTestSetMode(Object2DoubleMap<MutableString> probesetScaleMeanMap, Object2DoubleMap<MutableString> probesetScaleRangeMap) {
+        this.probesetScaleMeanMap = probesetScaleMeanMap;
+        this.probesetScaleRangeMap = probesetScaleRangeMap;
+        training = false;
+    }
+
+
+
 }
