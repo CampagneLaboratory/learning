@@ -74,7 +74,7 @@ public class LibSvmClassifier implements Classifier {
             double decision = svm.svm_predict_probability(getNativeModel(trainingModel),
                     nativeProblem.x[instanceIndex],
                     probabilities);
-            LOG.debug("decision values: " + ArrayUtils.toString(probabilities));
+            if (LOG.isDebugEnabled()) LOG.debug("decision values: " + ArrayUtils.toString(probabilities));
             return decision;
         } else {
             // Regular SVM was not trained to estimate probability. Report the decision function in place of estimated
@@ -84,18 +84,21 @@ public class LibSvmClassifier implements Classifier {
             if (LOG.isTraceEnabled()) {
                 printNodes(instanceIndex, nativeProblem);
             }
-            svm.svm_predict_values(getNativeModel(trainingModel), nativeProblem.x[instanceIndex], probabilities);
+            final int labelFirstTrainingExample = getNativeModel(trainingModel).label[0];
+            //svm.svm_predict_values(getNativeModel(trainingModel), nativeProblem.x[instanceIndex], probabilities);
             probabilities[0] = Math.abs(probabilities[0]);
             probabilities[1] = Double.NEGATIVE_INFINITY; // make sure probs[0] is max of the two values.
-            LOG.debug("decision values: " + ArrayUtils.toString(probabilities));
+            if (LOG.isDebugEnabled()) LOG.debug("decision values: " + ArrayUtils.toString(probabilities));
             double decision = svm.svm_predict(getNativeModel(trainingModel), getNativeProblem(problem).x[instanceIndex]);
+            if (LOG.isDebugEnabled()) LOG.debug("decision: " + decision);
+
             return decision;
         }
     }
 
     private void printNodes(int instanceIndex, svm_problem nativeProblem) {
         for (svm_node node : nativeProblem.x[instanceIndex]) {
-            LOG.trace(String.format("feature index: %d value: %f", node.index, node.value));
+            if (LOG.isTraceEnabled()) LOG.trace(String.format("feature index: %d value: %f", node.index, node.value));
         }
     }
 
@@ -125,4 +128,5 @@ public class LibSvmClassifier implements Classifier {
         assert parameters instanceof LibSvmParameters;
         this.parameters = (LibSvmParameters) parameters;
     }
+
 }

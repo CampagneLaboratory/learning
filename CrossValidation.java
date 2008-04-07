@@ -307,9 +307,9 @@ public class CrossValidation {
                                         final ObjectSet<CharSequence> measureNames,
                                         final EvaluationMeasure measure) {
 
-
         assert decisionValues.length == labels.length
                 : "number of predictions must match number of labels.";
+        adjustDecisionValues(decisionValues);
 
         for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
 
@@ -319,7 +319,7 @@ public class CrossValidation {
 
         }
         if (LOG.isDebugEnabled()) {
-            LOG.debug("decisions: " + ArrayUtils.toString(decisionValues));
+            LOG.debug("normalized decisions: " + ArrayUtils.toString(decisionValues));
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("labels: " + ArrayUtils.toString(labels));
@@ -391,7 +391,8 @@ public class CrossValidation {
         } catch (Exception e) {
             // connection error or otherwise me
             LOG.warn(
-                    "Cannot evaluate performance measure " + performanceValueName + ". Make sure Rserve (R server) is configured and running.",
+                    "Cannot evaluate performance measure " + performanceValueName +
+                            ". Make sure Rserve (R server) is configured and running.",
                     e);
             measure.addValue(performanceValueName, Double.NaN);
         } finally {
@@ -399,6 +400,24 @@ public class CrossValidation {
                 connectionPool.returnConnection(connection);
             }
         }
+    }
+
+    private static void adjustDecisionValues(double[] decisionValues) {
+       /* // make values fit between 0 and 1
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
+
+        for (double value : decisionValues) {
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+        }
+        double range = max - min;
+        for (int i = 0; i < decisionValues.length; i++) {
+            boolean negativeClass = decisionValues[i] < 0;
+            double normalizedDecision = (decisionValues[i] + (0 - min)) / range;
+            decisionValues[i] = negativeClass ? 1 - normalizedDecision : normalizedDecision;
+        }
+         */
     }
 
     private static double[] toDoubles(RList rList) {
@@ -640,7 +659,7 @@ public class CrossValidation {
     private FeatureScaler resetScaler() {
         try {
             FeatureScaler scaler = featureScalerClass.newInstance();
-           return scaler;
+            return scaler;
 
         } catch (InstantiationException e) {
             LOG.error("Cannot instanciate feature scaler", e);
