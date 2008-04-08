@@ -84,8 +84,7 @@ public class LibSvmClassifier implements Classifier {
             if (LOG.isTraceEnabled()) {
                 printNodes(instanceIndex, nativeProblem);
             }
-            final int labelFirstTrainingExample = getNativeModel(trainingModel).label[0];
-            //svm.svm_predict_values(getNativeModel(trainingModel), nativeProblem.x[instanceIndex], probabilities);
+            svm.svm_predict_values(getNativeModel(trainingModel), nativeProblem.x[instanceIndex], probabilities);
             probabilities[0] = Math.abs(probabilities[0]);
             probabilities[1] = Double.NEGATIVE_INFINITY; // make sure probs[0] is max of the two values.
             if (LOG.isDebugEnabled()) LOG.debug("decision values: " + ArrayUtils.toString(probabilities));
