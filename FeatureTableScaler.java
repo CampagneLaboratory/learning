@@ -30,4 +30,5 @@ import edu.mssm.crover.tables.InvalidColumnException;
 public abstract class FeatureTableScaler extends FeatureScaler {
      public abstract void processTable(final Table table, int[] columnIndices)
             throws TypeMismatchException, InvalidColumnException;
+    
 }
