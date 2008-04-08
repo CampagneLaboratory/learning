@@ -122,4 +122,6 @@ public interface ClassificationProblem {
      * @return
      */
     double[] featureValues(int featureIndex,final IntSet keepInstanceSet);
+
+    ClassificationProblem scaleFeatures(FeatureScaler scaler, IntSet testSetIndices, boolean trainingMode);
 }

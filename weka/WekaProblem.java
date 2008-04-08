@@ -162,6 +162,10 @@ public class WekaProblem implements ClassificationProblem {
       //        return values.toDoubleArray();
     }
 
+    public ClassificationProblem scaleFeatures(FeatureScaler scaler, IntSet testSetIndices, boolean trainingMode) {
+       throw new InternalError("This method has not been implemented");
+    }
+
 
     private void createDataset(final int maxNumberOfFeatures) {
         if (dataset == null) {

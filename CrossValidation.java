@@ -590,7 +590,6 @@ public class CrossValidation {
             assert k <= problem.getSize() : "Number of folds must be less or equal to number of training examples.";
             final int[] foldIndices = assignFolds(k);
 
-            FeatureScaler scaler = resetScaler();
 
             for (int f = 0; f < k; ++f) { // use each fold as test set while the others are the training set:
                 final IntSet trainingSet = new IntArraySet();
@@ -607,8 +606,11 @@ public class CrossValidation {
                 intersection.addAll(trainingSet);
                 intersection.retainAll(testSet);
                 assert intersection.size() == 0 : "test set and training set must never overlap";
+
                 final ClassificationProblem currentTrainingSet = problem.filter(trainingSet);
                 assert currentTrainingSet.getSize() == trainingSet.size() : "Problem size must match size of training set";
+
+                FeatureScaler scaler = resetScaler();      // reset the scaler for each test set..
 
                 ClassificationProblem scaledTrainingSet = currentTrainingSet.scaleTraining(scaler);
 

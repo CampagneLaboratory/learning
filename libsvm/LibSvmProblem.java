@@ -76,16 +76,12 @@ public class LibSvmProblem implements ClassificationProblem {
         int j = 0;
         for (int i = 0; i < problem.x.length; i++) {
             if (keepInstanceSet.contains(i)) {
-                reducedProblem.x[j++] = problem.x[i];
+                reducedProblem.x[j] = problem.x[i];
+                reducedProblem.y[j] = problem.y[i];
+                j++;
             }
         }
 
-        j = 0;
-        for (int i = 0; i < problem.y.length; i++) {
-            if (keepInstanceSet.contains(i)) {
-                reducedProblem.y[j++] = problem.y[i];
-            }
-        }
 
         return new LibSvmProblem(reducedProblem);
     }
@@ -234,19 +230,13 @@ public class LibSvmProblem implements ClassificationProblem {
                     reducedProblem.x[j][k] = new svm_node();
                     reducedProblem.x[j][k].value = scaler.scaleFeatureValue(featureValue, featureIndex);
                     reducedProblem.x[j][k].index = problem.x[i][k].index;
+                    reducedProblem.y[j] = problem.y[i];
                     featureIndex++;
                 }
                 j++;
             }
 
-        }
-
-        j = 0;
-        for (int i = 0; i < problem.y.length; i++) {
-            if (keepInstanceSet.contains(i)) {
-                reducedProblem.y[j++] = problem.y[i];
-            }
-        }
+        }       
 
         return new LibSvmProblem(reducedProblem);
     }
