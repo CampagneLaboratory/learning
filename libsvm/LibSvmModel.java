@@ -42,4 +42,8 @@ public class LibSvmModel extends ClassificationModel {
     public void write(final String filename) throws IOException {
         svm.svm_save_model(filename, nativeModel);
     }
+
+    public svm_model getNativeModel() {
+        return nativeModel;
+    }
 }
