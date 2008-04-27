@@ -150,12 +150,14 @@ public class CrossValidation {
                 trueLabels[i] = -1;
             }
         }
+        double[]binaryDecisions=new double[decisions.length];
         for (int i = 0; i < decisions.length; i++) {   // for each training example, leave it out:
 
             final double decision = decisions[i];
             final double trueLabel = trueLabels[i];
 
             final int binaryDecision = decision < 0 ? -1 : 1;
+            binaryDecisions[i]=binaryDecision;
             ctable.observeDecision(trueLabel, binaryDecision);
 
         }
@@ -163,6 +165,7 @@ public class CrossValidation {
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
         try {
             evaluateWithROCR(decisions, trueLabels, evaluationMeasureNames, measure);
+            evaluateWithROCR(binaryDecisions, trueLabels, evaluationMeasureNames, measure,"binary-");
         } catch (Exception e) {
             LOG.warn("cannot evaluate with ROCR");
         }
@@ -292,6 +295,21 @@ public class CrossValidation {
             }
         }
     }
+    /**
+        * Evaluate a variety of performance measures with <a href="http://rocr.bioinf.mpi-sb.mpg.de/ROCR.pdf">ROCR</a>.
+        *
+        * @param decisionValues Larger values indicate better confidence that the instance belongs to class 1.
+        * @param labels         Values of -1 or 0 indicate that the instance belongs to class 0, values of 1 indicate that the
+        *                       instance belongs to class 1.
+        * @param measureNames   Name of performance measures to evaluate.
+        * @param measure        Where performance values will be stored.
+        * @see #evaluateMeasure
+        */
+       public static void evaluateWithROCR(final double[] decisionValues, final double[] labels,
+                                           final ObjectSet<CharSequence> measureNames,
+                                           final EvaluationMeasure measure) {
+    evaluateWithROCR(decisionValues,labels,measureNames,measure,"");
+    }
 
     /**
      * Evaluate a variety of performance measures with <a href="http://rocr.bioinf.mpi-sb.mpg.de/ROCR.pdf">ROCR</a>.
@@ -305,7 +323,7 @@ public class CrossValidation {
      */
     public static void evaluateWithROCR(final double[] decisionValues, final double[] labels,
                                         final ObjectSet<CharSequence> measureNames,
-                                        final EvaluationMeasure measure) {
+                                        final EvaluationMeasure measure, CharSequence measureNamePrefix) {
 
         assert decisionValues.length == labels.length
                 : "number of predictions must match number of labels.";
@@ -360,12 +378,13 @@ public class CrossValidation {
                 rCommandMeasure.append("attr(perf.svm,\"y.values\")[[1]]");
                 final REXP expressionValue = connection.eval(rCommandMeasure.toString());
 
+                CharSequence completePerformanceValueName = measureNamePrefix.toString() + performanceValueName.toString();
 
                 final double[] values = expressionValue.asDoubles();
                 if (values.length == 1) {
                     // this performance measure is threshold independent..
                     LOG.debug("result from R (" + performanceValueName + ") : " + values[0]);
-                    measure.addValue(performanceValueName, values[0]);
+                    measure.addValue(completePerformanceValueName, values[0]);
                 } else {
                     // we have one performance measure value per decision threshold.
                     final StringBuilder rCommandThresholds = new StringBuilder();
@@ -385,7 +404,7 @@ public class CrossValidation {
                         LOG.debug("result from R (" + performanceValueName + ") : "
                                 + values[thresholdGEZero]);
                     }
-                    measure.addValue(performanceValueName, values[thresholdGEZero]);
+                    measure.addValue(completePerformanceValueName, values[thresholdGEZero]);
                 }
             }
         } catch (Exception e) {
