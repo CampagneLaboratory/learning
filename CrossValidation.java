@@ -372,19 +372,20 @@ public class CrossValidation {
                  charSequenceObjectIterator.hasNext();) {
                 final StringBuilder rCommandMeasure = new StringBuilder();
                 performanceValueName = charSequenceObjectIterator.next();
+                CharSequence storedPerformanceMeasureName = measureNamePrefix.toString() + performanceValueName.toString();
+
                 rCommandMeasure.append("perf.svm <- performance(pred.svm, '");
                 rCommandMeasure.append(performanceValueName);
                 rCommandMeasure.append("')\n");
                 rCommandMeasure.append("attr(perf.svm,\"y.values\")[[1]]");
                 final REXP expressionValue = connection.eval(rCommandMeasure.toString());
 
-                CharSequence completePerformanceValueName = measureNamePrefix.toString() + performanceValueName.toString();
 
                 final double[] values = expressionValue.asDoubles();
                 if (values.length == 1) {
                     // this performance measure is threshold independent..
                     LOG.debug("result from R (" + performanceValueName + ") : " + values[0]);
-                    measure.addValue(completePerformanceValueName, values[0]);
+                    measure.addValue(storedPerformanceMeasureName, values[0]);
                 } else {
                     // we have one performance measure value per decision threshold.
                     final StringBuilder rCommandThresholds = new StringBuilder();
@@ -404,16 +405,16 @@ public class CrossValidation {
                         LOG.debug("result from R (" + performanceValueName + ") : "
                                 + values[thresholdGEZero]);
                     }
-                    measure.addValue(completePerformanceValueName, values[thresholdGEZero]);
+                    measure.addValue(storedPerformanceMeasureName, values[thresholdGEZero]);
                 }
             }
         } catch (Exception e) {
-            // connection error or otherwise me
+            // connection error or otherwise
             LOG.warn(
                     "Cannot evaluate performance measure " + performanceValueName +
                             ". Make sure Rserve (R server) is configured and running.",
                     e);
-            measure.addValue(performanceValueName, Double.NaN);
+
         } finally {
             if (connection != null) {
                 connectionPool.returnConnection(connection);
