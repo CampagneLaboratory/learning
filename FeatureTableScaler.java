@@ -23,7 +23,7 @@ import edu.mssm.crover.tables.Table;
 import edu.mssm.crover.tables.TypeMismatchException;
 
 /**
- * @author: Fabien Campagne
+ * @author Fabien Campagne
  * Date: Apr 4, 2008
  * Time: 4:19:16 PM
  */
