@@ -18,11 +18,8 @@
 
 package edu.cornell.med.icb.learning;
 
-import it.unimi.dsi.mg4j.util.MutableString;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import edu.mssm.crover.tables.Table;
-import edu.mssm.crover.tables.TypeMismatchException;
-import edu.mssm.crover.tables.InvalidColumnException;
+import it.unimi.dsi.mg4j.util.MutableString;
 
 /**
  * This default implementation does not scale features at all. Sub-classes must implement the
