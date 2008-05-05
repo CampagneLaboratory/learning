@@ -20,7 +20,7 @@ package edu.cornell.med.icb.learning;
 
 import cern.jet.random.engine.RandomEngine;
 import edu.cornell.med.icb.R.RConnectionPool;
-import edu.cornell.med.icb.stats.MathewsCorrelationCalculator;
+import edu.cornell.med.icb.stats.MatthewsCorrelationCalculator;
 import edu.cornell.med.icb.tools.svmlight.EvaluationMeasure;
 import edu.cornell.med.icb.util.RandomAdapter;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
@@ -380,7 +380,7 @@ public class CrossValidation {
                     ObjectSet<CharSequence> measureNames, EvaluationMeasure
                     measure) {
         if (measureNames.contains("MCC")) {
-            MathewsCorrelationCalculator c = new MathewsCorrelationCalculator();
+            MatthewsCorrelationCalculator c = new MatthewsCorrelationCalculator();
             double mcc = c.thresholdIndependentMCC(decisionValues, labels);
             measure.addValue("MCC", mcc);
             ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
