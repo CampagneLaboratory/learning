@@ -20,6 +20,7 @@ package edu.cornell.med.icb.learning;
 
 import cern.jet.random.engine.RandomEngine;
 import edu.cornell.med.icb.R.RConnectionPool;
+import edu.cornell.med.icb.stats.MathewsCorrelationCalculator;
 import edu.cornell.med.icb.tools.svmlight.EvaluationMeasure;
 import edu.cornell.med.icb.util.RandomAdapter;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
@@ -33,6 +34,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
@@ -95,7 +97,7 @@ public class CrossValidation {
         this.problem = problem;
         this.randomAdapter = new RandomAdapter(randomEngine);
         evaluateMeasure("auc");
-        this.setCalculateROC(true);
+        this.useRServer(true);
     }
 
     public ClassificationModel trainModel() {
@@ -141,7 +143,8 @@ public class CrossValidation {
      */
     public static EvaluationMeasure testSetEvaluation(final double[] decisions,
                                                       final double[] trueLabels,
-                                                      final ObjectSet<CharSequence> evaluationMeasureNames) {
+                                                      final ObjectSet<CharSequence> evaluationMeasureNames,
+                                                      boolean useRServer) {
         final ContingencyTable ctable = new ContingencyTable();
         assert decisions.length == trueLabels.length : "decision and label arrays must have the same length.";
         for (int i = 0; i < trueLabels.length; i++) {
@@ -150,26 +153,72 @@ public class CrossValidation {
                 trueLabels[i] = -1;
             }
         }
-        double[]binaryDecisions=new double[decisions.length];
+        double[] binaryDecisions = new double[decisions.length];
         for (int i = 0; i < decisions.length; i++) {   // for each training example, leave it out:
 
             final double decision = decisions[i];
             final double trueLabel = trueLabels[i];
 
             final int binaryDecision = decision < 0 ? -1 : 1;
-            binaryDecisions[i]=binaryDecision;
+            binaryDecisions[i] = binaryDecision;
             ctable.observeDecision(trueLabel, binaryDecision);
 
         }
         ctable.average();
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
         try {
-            evaluateWithROCR(decisions, trueLabels, evaluationMeasureNames, measure);
-            evaluateWithROCR(binaryDecisions, trueLabels, evaluationMeasureNames, measure,"binary-");
+            evaluate(decisions, trueLabels, evaluationMeasureNames, measure, "", useRServer);
+            evaluate(binaryDecisions, trueLabels, evaluationMeasureNames, measure, "binary-", useRServer);
         } catch (Exception e) {
             LOG.warn("cannot evaluate with ROCR");
         }
         return measure;
+    }
+
+    /**
+     * Report evaluation measures for predictions on a test set.
+     *
+     * @param decisionList  Negative values predict the first class, while positive values predict the second class.
+     * @param trueLabelList label=0 encodes the first class, label=1 the second class.
+     * @return
+     */
+    public static EvaluationMeasure testSetEvaluation(final ObjectList<double[]> decisionList,
+                                                      final ObjectList<double[]> trueLabelList,
+                                                      final ObjectSet<CharSequence> evaluationMeasureNames,
+                                                      boolean useRServer) {
+        final ContingencyTable ctable = new ContingencyTable();
+
+        for (int j = 0; j < decisionList.size(); j++) {
+            double[] decisions = decisionList.get(j);
+            double[] trueLabels = trueLabelList.get(j);
+
+            assert decisions.length == trueLabels.length : "decision and label arrays must have the same length.";
+            for (int i = 0; i < trueLabels.length; i++) {
+                // convert labels to the conventions used by contingency table.
+                if (trueLabels[i] == 0) {
+                    trueLabels[i] = -1;
+                }
+            }
+            for (int i = 0; i < decisions.length; i++) {   // for each training example, leave it out:
+
+                final double decision = decisions[i];
+                final double trueLabel = trueLabels[i];
+
+                final int binaryDecision = decision < 0 ? -1 : 1;
+                ctable.observeDecision(trueLabel, binaryDecision);
+
+            }
+
+        }
+        ctable.average();
+        final EvaluationMeasure measure = convertToEvalMeasure(ctable);
+        try {
+            evaluate(decisionList, trueLabelList, evaluationMeasureNames, measure, "", useRServer);
+                     } catch (Exception e) {
+            LOG.warn("cannot evaluate with ROCR");
+        }
+        return measure;
+
     }
 
 
@@ -205,23 +254,21 @@ public class CrossValidation {
         }
         ctable.average();
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
-
-        if (calculateROC) {
-            evaluateWithROCR(decisionValues, labels, evaluationMeasureNames, measure);
-        }
-
+        evaluate(decisionValues, labels, evaluationMeasureNames, measure, "", useRServer);
         return measure;
     }
 
-    boolean calculateROC;
+    boolean useRServer;
 
     /**
      * Setting this flag to false removes the dependency on the R server.
      *
      * @param calculate If True, use an RServer to evaluate area under the roc curve. If False, skip the calculation.
      */
-    public void setCalculateROC(final boolean calculate) {
-        this.calculateROC = calculate;
+    public void useRServer(final boolean calculate) {
+        this.useRServer = calculate;
+
+
     }
 
     /**
@@ -305,11 +352,45 @@ public class CrossValidation {
         * @param measure        Where performance values will be stored.
         * @see #evaluateMeasure
         */
-       public static void evaluateWithROCR(final double[] decisionValues, final double[] labels,
-                                           final ObjectSet<CharSequence> measureNames,
-                                           final EvaluationMeasure measure) {
-    evaluateWithROCR(decisionValues,labels,measureNames,measure,"");
+    public static void evaluate(final double[] decisionValues, final double[] labels,
+                    ObjectSet<CharSequence> measureNames,
+                    final EvaluationMeasure measure,
+                    CharSequence measureNamePrefix, boolean useRServer) {
+        measureNames = evaluateMCC(decisionValues, labels, measureNames, measure);
+        if (measureNames.size() > 0) { // more measures to evaluate, send to ROCR
+            if (useRServer) {
+                evaluateWithROCR(decisionValues, labels, measureNames, measure, measureNamePrefix);
+            }
+        }
     }
+
+    public static void evaluate(ObjectList<double[]> decisionList, ObjectList<double[]> trueLabelList,
+                                ObjectSet<CharSequence> evaluationMeasureNames, EvaluationMeasure measure,
+                                CharSequence measureNamePrefix, boolean useRServer) {
+    //      measureNames = evaluateMCC(decisionList, trueLabelList, evaluationMeasureNames, measure);
+        if (evaluationMeasureNames.size() > 0) { // more measures to evaluate, send to ROCR
+            if (useRServer) {
+                // TODO: evaluateWithROCR(decisionValues, labels, measureNames, measure);
+            }
+        }
+    }
+
+    private static ObjectSet<CharSequence> evaluateMCC(double[] decisionValues,
+                    double[] labels,
+                    ObjectSet<CharSequence> measureNames, EvaluationMeasure
+                    measure) {
+        if (measureNames.contains("MCC")) {
+            MathewsCorrelationCalculator c = new MathewsCorrelationCalculator();
+            double mcc = c.thresholdIndependentMCC(decisionValues, labels);
+            measure.addValue("MCC", mcc);
+            ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
+            measureNamesFiltered.addAll(measureNames);
+            measureNamesFiltered.remove("MCC");
+            return measureNamesFiltered;
+        } else return measureNames;
+
+    }
+
 
     /**
      * Evaluate a variety of performance measures with <a href="http://rocr.bioinf.mpi-sb.mpg.de/ROCR.pdf">ROCR</a>.
@@ -663,9 +744,9 @@ public class CrossValidation {
                 ctableMicro.average();
                 f1Values.add(ctableMicro.getF1Measure());
                 double aucForOneFold = Double.NaN;
-                if (calculateROC) {
-                    evaluateWithROCR(decisionValues, labels, evaluationMeasureNames, measure);
-                }
+
+                evaluate(decisionValues, labels, evaluationMeasureNames, measure, "", useRServer);
+
 
                 aucValues.add(aucForOneFold);
             }
