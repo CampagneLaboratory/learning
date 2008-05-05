@@ -37,9 +37,10 @@ public class WekaProblem implements ClassificationProblem {
     Instances dataset;
     private FastVector attributes;
     private int instanceIndex;
-    private int labelIndex = 0;
+    private int labelIndex;
 
     public WekaProblem() {
+        super();
 
     }
 
@@ -48,16 +49,20 @@ public class WekaProblem implements ClassificationProblem {
     }
 
     public WekaProblem(final WekaProblem wekaProblem, final IntSet keepInstanceSet,
-                       FeatureScaler scaler) {
-        dataset = new Instances(this.toString(), (FastVector) wekaProblem.attributes.copy(), keepInstanceSet.size());
+                       final FeatureScaler scaler) {
+        super();
+        dataset = new Instances(this.toString(), (FastVector) wekaProblem.attributes.copy(),
+                keepInstanceSet.size());
         for (int instanceIndex = 0; instanceIndex < wekaProblem.getSize(); instanceIndex++) {
             if (keepInstanceSet.contains(instanceIndex)) {
-                Instance copyOfInstance = (Instance) wekaProblem.dataset.instance(instanceIndex).copy();
+                final Instance copyOfInstance =
+                        (Instance) wekaProblem.dataset.instance(instanceIndex).copy();
 
-                int numberOfFeatures = copyOfInstance.numAttributes() - 1;
+                final int numberOfFeatures = copyOfInstance.numAttributes() - 1;
                 for (int featureIndex = 0; featureIndex < numberOfFeatures; featureIndex++) {
-                    double featureValue = copyOfInstance.value(featureIndex + 1);
-                    copyOfInstance.setValue(featureIndex + 1, scaler.scaleFeatureValue(featureValue, featureIndex));
+                    final double featureValue = copyOfInstance.value(featureIndex + 1);
+                    copyOfInstance.setValue(featureIndex + 1,
+                            scaler.scaleFeatureValue(featureValue, featureIndex));
                 }
                 dataset.add(copyOfInstance);
             }
@@ -88,8 +93,8 @@ public class WekaProblem implements ClassificationProblem {
         return new WekaProblem(this, allButOne);
     }
 
-    public ClassificationProblem filter(int instanceIndex) {
-        IntSet set=new IntArraySet();
+    public ClassificationProblem filter(final int instanceIndex) {
+        final IntSet set=new IntArraySet();
         set.add(instanceIndex);
         return filter(set);
     }
@@ -124,8 +129,8 @@ public class WekaProblem implements ClassificationProblem {
         // do nothing. Already stored natively.
     }
 
-    public ClassificationProblem scaleTraining(FeatureScaler scaler) {
-        IntSet allInstances = new IntLinkedOpenHashSet();
+    public ClassificationProblem scaleTraining(final FeatureScaler scaler) {
+        final IntSet allInstances = new IntLinkedOpenHashSet();
         int numberOfFeatures = 0;
         for (int i = 0; i < this.dataset.numInstances(); i++) {
             allInstances.add(i);
@@ -141,19 +146,19 @@ public class WekaProblem implements ClassificationProblem {
        // return new WekaProblem(this, allInstances, scaler);
     }
 
-    public ClassificationProblem scaleTestSet(FeatureScaler scaler, int testInstanceIndex) {
-        IntSet allInstances = new IntLinkedOpenHashSet();
+    public ClassificationProblem scaleTestSet(final FeatureScaler scaler, final int testInstanceIndex) {
+        final IntSet allInstances = new IntLinkedOpenHashSet();
         allInstances.add(testInstanceIndex);
         throw new InternalError("This method has not been tested");
       //        return new WekaProblem(this, allInstances, scaler);
     }
 
-    public double[] featureValues(int featureIndex, IntSet keepInstanceSet) {
+    public double[] featureValues(final int featureIndex, final IntSet keepInstanceSet) {
         int instanceIndex = 0;
-        DoubleList values = new DoubleArrayList();
+        final DoubleList values = new DoubleArrayList();
         for (int InstanceIndex = 0; instanceIndex < dataset.numInstances(); instanceIndex++) {
             if (keepInstanceSet.contains(instanceIndex)) {
-                int attributeIndex = featureIndex + 1;
+                final int attributeIndex = featureIndex + 1;
                 values.add(dataset.instance(instanceIndex).value(attributeIndex));
             }
             instanceIndex++;
@@ -162,7 +167,7 @@ public class WekaProblem implements ClassificationProblem {
       //        return values.toDoubleArray();
     }
 
-    public ClassificationProblem scaleFeatures(FeatureScaler scaler, IntSet testSetIndices, boolean trainingMode) {
+    public ClassificationProblem scaleFeatures(final FeatureScaler scaler, final IntSet testSetIndices, final boolean trainingMode) {
        throw new InternalError("This method has not been implemented");
     }
 

@@ -31,10 +31,12 @@ public class LibSvmModel extends ClassificationModel {
     svm_model nativeModel;
 
     public LibSvmModel(final svm_model svm_model) {
+        super();
         this.nativeModel = svm_model;
     }
 
     public LibSvmModel(final String modelFilename) throws IOException {
+        super();
         nativeModel = svm.svm_load_model(modelFilename);
     }
 

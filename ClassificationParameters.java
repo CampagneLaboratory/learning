@@ -37,6 +37,7 @@ public abstract class ClassificationParameters {
     }
 
     protected ClassificationParameters() {
+        super();
         this.parameterNames = new ObjectArraySet<String>();
     }
 

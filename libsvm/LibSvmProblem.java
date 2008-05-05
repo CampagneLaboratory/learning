@@ -41,12 +41,14 @@ public class LibSvmProblem implements ClassificationProblem {
     DoubleList labelList;
 
     public LibSvmProblem() {
+        super();
         instanceList = new ObjectArrayList<svm_node[]>();
         labelList = new DoubleArrayList();
         problem = null;
     }
 
     public LibSvmProblem(final svm_problem reducedProblem) {
+        super();
         this.problem = reducedProblem;
 
     }
@@ -106,8 +108,8 @@ public class LibSvmProblem implements ClassificationProblem {
         return new LibSvmProblem(reducedProblem);
     }
 
-    public ClassificationProblem filter(int instanceIndex) {
-        IntSet set = new IntArraySet();
+    public ClassificationProblem filter(final int instanceIndex) {
+        final IntSet set = new IntArraySet();
         set.add(instanceIndex);
         return filter(set);
     }
@@ -168,27 +170,27 @@ public class LibSvmProblem implements ClassificationProblem {
      * @param scaler
      * @return
      */
-    public ClassificationProblem scaleTraining(FeatureScaler scaler) {
+    public ClassificationProblem scaleTraining(final FeatureScaler scaler) {
         prepareNative();
-        IntSet keepInstanceSet = new IntOpenHashSet();
+        final IntSet keepInstanceSet = new IntOpenHashSet();
         for (int index = 0; index < this.problem.l; index++) {
             keepInstanceSet.add(index);
         }
         return scaleFeatures(scaler, keepInstanceSet, true);
     }
 
-    public ClassificationProblem scaleTestSet(FeatureScaler scaler, int testInstanceIndex) {
+    public ClassificationProblem scaleTestSet(final FeatureScaler scaler, final int testInstanceIndex) {
         prepareNative();
-        IntSet instanceIndexSet = new IntArraySet();
+        final IntSet instanceIndexSet = new IntArraySet();
         instanceIndexSet.add(testInstanceIndex);
         return scaleFeatures(scaler, instanceIndexSet, false);
     }
 
-    public double[] featureValues(int featureIndex, IntSet keepInstanceSet) {
+    public double[] featureValues(final int featureIndex, final IntSet keepInstanceSet) {
         prepareNative();
         int instanceIndex = 0;
-        DoubleList values = new DoubleArrayList();
-        for (svm_node[] instance : this.problem.x) {
+        final DoubleList values = new DoubleArrayList();
+        for (final svm_node[] instance : this.problem.x) {
             if (keepInstanceSet.contains(instanceIndex)) {
                 assert (instance[featureIndex].index == featureIndex) : "feature index must match at array index";
                 values.add(instance[featureIndex].value);
@@ -199,11 +201,11 @@ public class LibSvmProblem implements ClassificationProblem {
     }
 
 
-    public ClassificationProblem scaleFeatures(FeatureScaler scaler, IntSet keepInstanceSet, boolean training) {
+    public ClassificationProblem scaleFeatures(final FeatureScaler scaler, final IntSet keepInstanceSet, final boolean training) {
         prepareNative();
         final svm_problem reducedProblem = new svm_problem();
         // observe each feature to accumulate statistics:
-        int numFeatures = getNumFeatures(problem);
+        final int numFeatures = getNumFeatures(problem);
 
         if (training) {
             for (int featureIndex = 0; featureIndex < numFeatures; featureIndex++) {
@@ -212,7 +214,7 @@ public class LibSvmProblem implements ClassificationProblem {
             }
         }
 
-        int problemSize = keepInstanceSet.size();
+        final int problemSize = keepInstanceSet.size();
         reducedProblem.l = problemSize;                                 // number of records.
         reducedProblem.x =
                 new svm_node[problemSize][numFeatures];         // features.
@@ -225,7 +227,7 @@ public class LibSvmProblem implements ClassificationProblem {
                 reducedProblem.x[j] = new svm_node[problem.x[i].length];
                 for (int k = 0; k < problem.x[i].length; k++) {
 
-                    double featureValue = problem.x[i][k].value;
+                    final double featureValue = problem.x[i][k].value;
                     int featureIndex = problem.x[i][k].index;
                     reducedProblem.x[j][k] = new svm_node();
                     reducedProblem.x[j][k].value = scaler.scaleFeatureValue(featureValue, featureIndex);
@@ -236,17 +238,17 @@ public class LibSvmProblem implements ClassificationProblem {
                 j++;
             }
 
-        }       
+        }
 
         return new LibSvmProblem(reducedProblem);
     }
 
-    private int getNumFeatures(svm_problem problem) {
+    private int getNumFeatures(final svm_problem problem) {
         int maxFeatureIndex = Integer.MIN_VALUE;
         int minFeatureIndex = Integer.MAX_VALUE;
 
-        for (svm_node[] instance : problem.x) {
-            for (svm_node feature : instance) {
+        for (final svm_node[] instance : problem.x) {
+            for (final svm_node feature : instance) {
                 maxFeatureIndex = Math.max(maxFeatureIndex, feature.index);
                 minFeatureIndex = Math.min(minFeatureIndex, feature.index);
             }
@@ -259,11 +261,11 @@ public class LibSvmProblem implements ClassificationProblem {
         return problem;
     }
 
-    public double[] getFeatures(int instanceIndex) {
+    public double[] getFeatures(final int instanceIndex) {
 
-        DoubleList features = new DoubleArrayList();
-        svm_node[] instance = (problem != null) ? this.problem.x[instanceIndex] : instanceList.get(instanceIndex);
-        for (svm_node feature : instance) {
+        final DoubleList features = new DoubleArrayList();
+        final svm_node[] instance = (problem != null) ? this.problem.x[instanceIndex] : instanceList.get(instanceIndex);
+        for (final svm_node feature : instance) {
             features.add(feature.value);
         }
 

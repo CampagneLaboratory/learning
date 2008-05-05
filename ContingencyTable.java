@@ -22,11 +22,11 @@ package edu.cornell.med.icb.learning;
  * @author Fabien Campagne Date: Oct 26, 2007 Time: 2:11:19 PM
  */
 public class ContingencyTable {
-    double gfpp = 0;  // ++  positiveClass predictedPositive     TP
-    double gfpm = 0;  // +-  positiveClass predictedNegative     FN
-    double gfmp = 0;  // -+  negativeClass predictedPositive     FP
-    double gfmm = 0;  // --  negativeClass predictedNegative     TN
-    int count = 0;
+    double gfpp;  // ++  positiveClass predictedPositive     TP
+    double gfpm;  // +-  positiveClass predictedNegative     FN
+    double gfmp;  // -+  negativeClass predictedPositive     FP
+    double gfmm;  // --  negativeClass predictedNegative     TN
+    int count;
 
     public void observeDecision(final double trueLabel, final double decision) {
 

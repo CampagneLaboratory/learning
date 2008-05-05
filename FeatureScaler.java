@@ -43,7 +43,7 @@ public class FeatureScaler {
                                           final int featureIndex) {
     }
 
-    public double scaleFeatureValue(double featureValue, int featureIndex) {
+    public double scaleFeatureValue(final double featureValue, final int featureIndex) {
         return featureValue;
     }
 
@@ -58,7 +58,7 @@ public class FeatureScaler {
      * @param probesetScaleMeanMap
      * @param probesetScaleRangeMap
      */
-    public void setTrainingMode(Object2DoubleMap<MutableString> probesetScaleMeanMap, Object2DoubleMap<MutableString> probesetScaleRangeMap) {
+    public void setTrainingMode(final Object2DoubleMap<MutableString> probesetScaleMeanMap, final Object2DoubleMap<MutableString> probesetScaleRangeMap) {
         this.probesetScaleMeanMap = probesetScaleMeanMap;
         this.probesetScaleRangeMap = probesetScaleRangeMap;
         training = true;
@@ -72,7 +72,7 @@ public class FeatureScaler {
      * @param probesetScaleMeanMap
      * @param probesetScaleRangeMap
      */
-    public void setTestSetMode(Object2DoubleMap<MutableString> probesetScaleMeanMap, Object2DoubleMap<MutableString> probesetScaleRangeMap) {
+    public void setTestSetMode(final Object2DoubleMap<MutableString> probesetScaleMeanMap, final Object2DoubleMap<MutableString> probesetScaleRangeMap) {
         this.probesetScaleMeanMap = probesetScaleMeanMap;
         this.probesetScaleRangeMap = probesetScaleRangeMap;
         training = false;

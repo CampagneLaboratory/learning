@@ -26,22 +26,22 @@ package edu.cornell.med.icb.learning;
 public class VectorDetails {
 
     /** True if all values are positive. */
-    private Boolean isAllPositive = null;
+    private Boolean isAllPositive;
 
     /** True if all values are negative. */
-    private Boolean isAllNegative = null;
+    private Boolean isAllNegative;
 
     /** True if all values are zeros. */
-    private Boolean isAllZeros = null;
+    private Boolean isAllZeros;
 
     /** True if all values are ones. */
-    private Boolean isAllOnes = null;
+    private Boolean isAllOnes;
 
     /** True if all values are ones. */
-    private Boolean isSingleValue = null;
+    private Boolean isSingleValue;
 
     /** True if all values are ones. */
-    private Double theSingleValue = null;
+    private Double theSingleValue;
 
     /** True if all values are ones. */
     private boolean isEmpty = true;
@@ -52,11 +52,12 @@ public class VectorDetails {
      * @param vector the vector to get the details on
      */
     public VectorDetails(final double[] vector) {
+        super();
         if (vector != null && vector.length > 0) {
             isEmpty = false;
             theSingleValue = vector[0];
             isSingleValue = true;
-            for (double v : vector) {
+            for (final double v : vector) {
                 if (isSingleValue && (theSingleValue != v)) {
                     isSingleValue = false;
                     theSingleValue = null;

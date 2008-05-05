@@ -93,6 +93,7 @@ public class CrossValidation {
 
     public CrossValidation(final Classifier classifier, final ClassificationProblem problem,
                            final RandomEngine randomEngine) {
+        super();
         this.classifier = classifier;
         this.problem = problem;
         this.randomAdapter = new RandomAdapter(randomEngine);
@@ -144,7 +145,7 @@ public class CrossValidation {
     public static EvaluationMeasure testSetEvaluation(final double[] decisions,
                                                       final double[] trueLabels,
                                                       final ObjectSet<CharSequence> evaluationMeasureNames,
-                                                      boolean useRServer) {
+                                                      final boolean useRServer) {
         final ContingencyTable ctable = new ContingencyTable();
         assert decisions.length == trueLabels.length : "decision and label arrays must have the same length.";
         for (int i = 0; i < trueLabels.length; i++) {
@@ -153,7 +154,7 @@ public class CrossValidation {
                 trueLabels[i] = -1;
             }
         }
-        double[] binaryDecisions = new double[decisions.length];
+        final double[] binaryDecisions = new double[decisions.length];
         for (int i = 0; i < decisions.length; i++) {   // for each training example, leave it out:
 
             final double decision = decisions[i];
@@ -185,12 +186,12 @@ public class CrossValidation {
     public static EvaluationMeasure testSetEvaluation(final ObjectList<double[]> decisionList,
                                                       final ObjectList<double[]> trueLabelList,
                                                       final ObjectSet<CharSequence> evaluationMeasureNames,
-                                                      boolean useRServer) {
+                                                      final boolean useRServer) {
         final ContingencyTable ctable = new ContingencyTable();
 
         for (int j = 0; j < decisionList.size(); j++) {
-            double[] decisions = decisionList.get(j);
-            double[] trueLabels = trueLabelList.get(j);
+            final double[] decisions = decisionList.get(j);
+            final double[] trueLabels = trueLabelList.get(j);
 
             assert decisions.length == trueLabels.length : "decision and label arrays must have the same length.";
             for (int i = 0; i < trueLabels.length; i++) {
@@ -232,7 +233,7 @@ public class CrossValidation {
         final double[] decisionValues = new double[problem.getSize()];
         final double[] labels = new double[problem.getSize()];
 
-        FeatureScaler scaler = resetScaler();
+        final FeatureScaler scaler = resetScaler();
         final double[] probs = {0d, 0d};
 
         for (int testInstanceIndex = 0; testInstanceIndex < problem.getSize(); testInstanceIndex++)
@@ -240,9 +241,9 @@ public class CrossValidation {
 
             final ClassificationProblem currentTrainingSet = problem.exclude(testInstanceIndex);
 
-            ClassificationProblem scaledTrainingSet = currentTrainingSet.scaleTraining(scaler);
+            final ClassificationProblem scaledTrainingSet = currentTrainingSet.scaleTraining(scaler);
             final ClassificationModel looModel = classifier.train(scaledTrainingSet);
-            ClassificationProblem oneScaledTestInstanceProblem = problem.scaleTestSet(scaler, testInstanceIndex);
+            final ClassificationProblem oneScaledTestInstanceProblem = problem.scaleTestSet(scaler, testInstanceIndex);
 
             final double decision = classifier.predict(looModel, oneScaledTestInstanceProblem, 0, probs);
             final double trueLabel = problem.getLabel(testInstanceIndex);
@@ -355,7 +356,7 @@ public class CrossValidation {
     public static void evaluate(final double[] decisionValues, final double[] labels,
                     ObjectSet<CharSequence> measureNames,
                     final EvaluationMeasure measure,
-                    CharSequence measureNamePrefix, boolean useRServer) {
+                    final CharSequence measureNamePrefix, final boolean useRServer) {
         measureNames = evaluateMCC(decisionValues, labels, measureNames, measure);
         if (measureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
@@ -364,9 +365,9 @@ public class CrossValidation {
         }
     }
 
-    public static void evaluate(ObjectList<double[]> decisionList, ObjectList<double[]> trueLabelList,
-                                ObjectSet<CharSequence> evaluationMeasureNames, EvaluationMeasure measure,
-                                CharSequence measureNamePrefix, boolean useRServer) {
+    public static void evaluate(final ObjectList<double[]> decisionList, final ObjectList<double[]> trueLabelList,
+                                final ObjectSet<CharSequence> evaluationMeasureNames, final EvaluationMeasure measure,
+                                final CharSequence measureNamePrefix, final boolean useRServer) {
     //      measureNames = evaluateMCC(decisionList, trueLabelList, evaluationMeasureNames, measure);
         if (evaluationMeasureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
@@ -375,19 +376,21 @@ public class CrossValidation {
         }
     }
 
-    private static ObjectSet<CharSequence> evaluateMCC(double[] decisionValues,
-                    double[] labels,
-                    ObjectSet<CharSequence> measureNames, EvaluationMeasure
+    private static ObjectSet<CharSequence> evaluateMCC(final double[] decisionValues,
+                    final double[] labels,
+                    final ObjectSet<CharSequence> measureNames, final EvaluationMeasure
                     measure) {
         if (measureNames.contains("MCC")) {
-            MatthewsCorrelationCalculator c = new MatthewsCorrelationCalculator();
-            double mcc = c.thresholdIndependentMCC(decisionValues, labels);
+            final MatthewsCorrelationCalculator c = new MatthewsCorrelationCalculator();
+            final double mcc = c.thresholdIndependentMCC(decisionValues, labels);
             measure.addValue("MCC", mcc);
-            ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
+            final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
             measureNamesFiltered.addAll(measureNames);
             measureNamesFiltered.remove("MCC");
             return measureNamesFiltered;
-        } else return measureNames;
+        } else {
+            return measureNames;
+        }
 
     }
 
@@ -404,7 +407,7 @@ public class CrossValidation {
      */
     public static void evaluateWithROCR(final double[] decisionValues, final double[] labels,
                                         final ObjectSet<CharSequence> measureNames,
-                                        final EvaluationMeasure measure, CharSequence measureNamePrefix) {
+                                        final EvaluationMeasure measure, final CharSequence measureNamePrefix) {
 
         assert decisionValues.length == labels.length
                 : "number of predictions must match number of labels.";
@@ -453,7 +456,7 @@ public class CrossValidation {
                  charSequenceObjectIterator.hasNext();) {
                 final StringBuilder rCommandMeasure = new StringBuilder();
                 performanceValueName = charSequenceObjectIterator.next();
-                CharSequence storedPerformanceMeasureName = measureNamePrefix.toString() + performanceValueName.toString();
+                final CharSequence storedPerformanceMeasureName = measureNamePrefix.toString() + performanceValueName.toString();
 
                 rCommandMeasure.append("perf.svm <- performance(pred.svm, '");
                 rCommandMeasure.append(performanceValueName);
@@ -503,7 +506,7 @@ public class CrossValidation {
         }
     }
 
-    private static void adjustDecisionValues(double[] decisionValues) {
+    private static void adjustDecisionValues(final double[] decisionValues) {
        /* // make values fit between 0 and 1
         double min = Double.POSITIVE_INFINITY;
         double max = Double.NEGATIVE_INFINITY;
@@ -521,11 +524,11 @@ public class CrossValidation {
          */
     }
 
-    private static double[] toDoubles(RList rList) {
-        Iterator it = rList.iterator();
-        DoubleList doubles = new DoubleArrayList();
+    private static double[] toDoubles(final RList rList) {
+        final Iterator it = rList.iterator();
+        final DoubleList doubles = new DoubleArrayList();
         while (it.hasNext()) {
-            Object o = it.next();
+            final Object o = it.next();
             if (o instanceof REXPDouble) {
                 try {
                     doubles.add(((REXPDouble) o).asDouble());
@@ -703,7 +706,7 @@ public class CrossValidation {
                     }
                 }
                 assert testSet.size() + trainingSet.size() == problem.getSize() : "test set and training set size must add to whole problem size.";
-                IntSet intersection = new IntOpenHashSet();
+                final IntSet intersection = new IntOpenHashSet();
                 intersection.addAll(trainingSet);
                 intersection.retainAll(testSet);
                 assert intersection.size() == 0 : "test set and training set must never overlap";
@@ -711,9 +714,9 @@ public class CrossValidation {
                 final ClassificationProblem currentTrainingSet = problem.filter(trainingSet);
                 assert currentTrainingSet.getSize() == trainingSet.size() : "Problem size must match size of training set";
 
-                FeatureScaler scaler = resetScaler();      // reset the scaler for each test set..
+                final FeatureScaler scaler = resetScaler();      // reset the scaler for each test set..
 
-                ClassificationProblem scaledTrainingSet = currentTrainingSet.scaleTraining(scaler);
+                final ClassificationProblem scaledTrainingSet = currentTrainingSet.scaleTraining(scaler);
 
                 final ClassificationModel looModel = classifier.train(scaledTrainingSet);
                 final ContingencyTable ctableMicro = new ContingencyTable();
@@ -725,11 +728,11 @@ public class CrossValidation {
                 for (final int testInstanceIndex : testSet) {  // for each test example:
 
                     //  ClassificationProblem oneScaledTestInstanceProblem = problem.filter(testInstanceIndex);
-                    ClassificationProblem oneScaledTestInstanceProblem = problem.scaleTestSet(scaler, testInstanceIndex);
+                    final ClassificationProblem oneScaledTestInstanceProblem = problem.scaleTestSet(scaler, testInstanceIndex);
                     assert oneScaledTestInstanceProblem.getSize() == 1 : "filtered test problem must have one instance left (size was " + oneScaledTestInstanceProblem.getSize() + ").";
                     final double decision = classifier.predict(looModel, oneScaledTestInstanceProblem, 0, probs);
                     final double trueLabel = problem.getLabel(testInstanceIndex);
-                    double maxProb;
+                    final double maxProb;
 
                     maxProb = Math.max(probs[0], probs[1]);
 
@@ -743,7 +746,7 @@ public class CrossValidation {
 
                 ctableMicro.average();
                 f1Values.add(ctableMicro.getF1Measure());
-                double aucForOneFold = Double.NaN;
+                final double aucForOneFold = Double.NaN;
 
                 evaluate(decisionValues, labels, evaluationMeasureNames, measure, "", useRServer);
 
@@ -761,7 +764,7 @@ public class CrossValidation {
 
     private FeatureScaler resetScaler() {
         try {
-            FeatureScaler scaler = featureScalerClass.newInstance();
+            final FeatureScaler scaler = featureScalerClass.newInstance();
             return scaler;
 
         } catch (InstantiationException e) {
@@ -840,7 +843,7 @@ public class CrossValidation {
         }
     }
 
-    public void setScalerClass(Class<? extends FeatureScaler> featureScalerClass) {
+    public void setScalerClass(final Class<? extends FeatureScaler> featureScalerClass) {
         this.featureScalerClass = featureScalerClass;
     }
 }

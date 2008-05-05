@@ -57,7 +57,7 @@ public abstract class ClassificationModel {
         return load(modelFilename, null);
     }
 
-    public static ClassificationHelper load(final String modelFilename, String modelParameters) throws IOException {
+    public static ClassificationHelper load(final String modelFilename, final String modelParameters) throws IOException {
         final ClassificationHelper helper = new ClassificationHelper();
         if (modelFilename.contains("libSVM")) {
 
@@ -90,7 +90,7 @@ public abstract class ClassificationModel {
         return splitModelParameters(tokens[1]);
     }
 
-    public static String[] splitModelParameters(String parameterToken) {
+    public static String[] splitModelParameters(final String parameterToken) {
         final String[] result = parameterToken.split("[,]");
         if (result.length == 1 && result[0].length() == 0) {
             return new String[0];

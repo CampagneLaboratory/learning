@@ -38,6 +38,7 @@ public class WekaClassifier implements Classifier {
 
     public WekaClassifier(
             final weka.classifiers.Classifier delegate) {
+        super();
         this.delegate = delegate;
         this.defaultParameters = new WekaParameters();
     }
@@ -48,6 +49,7 @@ public class WekaClassifier implements Classifier {
     }
 
     public WekaClassifier() {
+        super();
         defaultParameters = new WekaParameters();
     }
 

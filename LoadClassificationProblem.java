@@ -147,7 +147,7 @@ public class LoadClassificationProblem {
                     throws TypeMismatchException, InvalidColumnException {
 
                 // label:
-                double label = 0;   // We don't know what the label is.
+                final double label = 0;   // We don't know what the label is.
 
                 final int numberOfFeatures = columnIndices.length;
                 final int instanceIndex = problem.addInstance(numberOfFeatures);
