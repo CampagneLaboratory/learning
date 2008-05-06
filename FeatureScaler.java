@@ -19,7 +19,7 @@
 package edu.cornell.med.icb.learning;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.mg4j.util.MutableString;
+import it.unimi.dsi.lang.MutableString;
 
 /**
  * This default implementation does not scale features at all. Sub-classes must implement the
@@ -52,13 +52,14 @@ public class FeatureScaler {
     protected boolean training;
 
     /**
-     * Instruct to scale a training set. While training, mean and range of un-scaled features are collected.  Results are
-     * stored in the maps passed as parameters.
+     * Instruct to scale a training set. While training, mean and range of un-scaled features are
+     * collected.  Results are stored in the maps passed as parameters.
      *
      * @param probesetScaleMeanMap
      * @param probesetScaleRangeMap
      */
-    public void setTrainingMode(final Object2DoubleMap<MutableString> probesetScaleMeanMap, final Object2DoubleMap<MutableString> probesetScaleRangeMap) {
+    public void setTrainingMode(final Object2DoubleMap<MutableString> probesetScaleMeanMap,
+                                final Object2DoubleMap<MutableString> probesetScaleRangeMap) {
         this.probesetScaleMeanMap = probesetScaleMeanMap;
         this.probesetScaleRangeMap = probesetScaleRangeMap;
         training = true;
@@ -66,13 +67,14 @@ public class FeatureScaler {
     }
 
     /**
-     * Instruct to scale a test set. While testing, mean and range of un-scaled features are read directly from the
-     * maps passed as parameters. They are not estimated from the dataset.
+     * Instruct to scale a test set. While testing, mean and range of un-scaled features are read
+     * directly from the maps passed as parameters. They are not estimated from the dataset.
      *
      * @param probesetScaleMeanMap
      * @param probesetScaleRangeMap
      */
-    public void setTestSetMode(final Object2DoubleMap<MutableString> probesetScaleMeanMap, final Object2DoubleMap<MutableString> probesetScaleRangeMap) {
+    public void setTestSetMode(final Object2DoubleMap<MutableString> probesetScaleMeanMap,
+                               final Object2DoubleMap<MutableString> probesetScaleRangeMap) {
         this.probesetScaleMeanMap = probesetScaleMeanMap;
         this.probesetScaleRangeMap = probesetScaleRangeMap;
         training = false;
