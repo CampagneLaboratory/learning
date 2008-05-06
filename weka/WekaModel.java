@@ -27,7 +27,7 @@ import java.io.IOException;
  * @author Fabien Campagne Date: Nov 23, 2007 Time: 1:29:58 PM
  */
 public class WekaModel extends ClassificationModel {
-    WekaClassifier classifier;
+    final WekaClassifier classifier;
 
     public WekaModel(final WekaClassifier wekaClassifier) {
         super();

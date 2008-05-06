@@ -25,7 +25,7 @@ import libsvm.svm_parameter;
  * @author Fabien Campagne Date: Nov 20, 2007 Time: 5:29:48 PM
  */
 public class LibSvmParameters extends ClassificationParameters {
-    svm_parameter nativeParameters;
+    final svm_parameter nativeParameters;
 
     public LibSvmParameters(final svm_parameter nativeParameters) {
         super();

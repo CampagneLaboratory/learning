@@ -58,9 +58,9 @@ public class CrossValidation {
     private static final Log LOG = LogFactory.getLog(CrossValidation.class);
 
     private ClassificationModel model;
-    Classifier classifier;
-    ClassificationProblem problem;
-    ObjectSet<CharSequence> evaluationMeasureNames = new ObjectArraySet<CharSequence>();
+    final Classifier classifier;
+    final ClassificationProblem problem;
+    final ObjectSet<CharSequence> evaluationMeasureNames = new ObjectArraySet<CharSequence>();
 
     private Class<? extends FeatureScaler> featureScalerClass;
 
@@ -377,9 +377,8 @@ public class CrossValidation {
     }
 
     private static ObjectSet<CharSequence> evaluateMCC(final double[] decisionValues,
-                    final double[] labels,
-                    final ObjectSet<CharSequence> measureNames, final EvaluationMeasure
-                    measure) {
+                    final double[] labels, final ObjectSet<CharSequence> measureNames,
+                    final EvaluationMeasure measure) {
         if (measureNames.contains("MCC")) {
             final MatthewsCorrelationCalculator c = new MatthewsCorrelationCalculator();
             final double mcc = c.thresholdIndependentMCC(decisionValues, labels);
@@ -391,7 +390,6 @@ public class CrossValidation {
         } else {
             return measureNames;
         }
-
     }
 
 

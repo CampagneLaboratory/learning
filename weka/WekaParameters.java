@@ -25,7 +25,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  * @author Fabien Campagne Date: Nov 23, 2007 Time: 1:39:18 PM
  */
 public class WekaParameters extends ClassificationParameters {
-    private ObjectArrayList<String> options = new ObjectArrayList<String>();
+    private final ObjectArrayList<String> options = new ObjectArrayList<String>();
 
     public String getWekaClassifierClassName() {
         return wekaClassifierClassName;

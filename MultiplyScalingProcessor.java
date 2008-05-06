@@ -25,7 +25,7 @@ package edu.cornell.med.icb.learning;
  * To change this template use File | Settings | File Templates.
  */
 public class MultiplyScalingProcessor extends FeatureScaler {
-    private double multiplicationFactor;
+    private final double multiplicationFactor;
 
     public MultiplyScalingProcessor(final double multiplier) {
         super();

@@ -28,7 +28,7 @@ import java.util.Set;
  * @author Fabien Campagne Date: Nov 19, 2007 Time: 9:29:24 AM
  */
 public abstract class ClassificationParameters {
-    Set<String> parameterNames;
+    final Set<String> parameterNames;
 
     public abstract void setParameter(final String parameterName, final double value);
 
