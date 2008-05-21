@@ -25,7 +25,6 @@ import edu.cornell.med.icb.learning.Classifier;
 import libsvm.svm;
 import libsvm.svm_model;
 import libsvm.svm_node;
-import libsvm.svm_parameter;
 import libsvm.svm_problem;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
@@ -64,8 +63,7 @@ public class LibSvmClassifier implements Classifier {
                           final int instanceIndex, final double[] probabilities) {
 
         final svm_model model = getNativeModel(trainingModel);
-        if ((model.param.svm_type == svm_parameter.C_SVC || model.param.svm_type == svm_parameter.NU_SVC) &&
-                model.probA != null && model.probB != null) {
+        if (svm.svm_check_probability_model(model) == 1) {
             LOG.debug("estimating probabilities");
             final svm_problem nativeProblem = getNativeProblem(problem);
             if (LOG.isTraceEnabled()) {

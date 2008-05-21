@@ -18,6 +18,7 @@
 
 package edu.cornell.med.icb.learning.libsvm;
 
+import libsvm.svm;
 import libsvm.svm_model;
 import libsvm.svm_node;
 import libsvm.svm_parameter;
@@ -29,7 +30,7 @@ public class LibSvmUtils {
 
     public static double[] calculateWeights(final svm_model model) {
         if (model.param.kernel_type == svm_parameter.LINEAR &&
-                model.param.svm_type == svm_parameter.C_SVC) {
+                svm.svm_get_svm_type(model) == svm_parameter.C_SVC) {
             final int numFeatures = model.SV[0].length;
             final double[] weights = new double[numFeatures];
             int supportVectorIndex = 0;
