@@ -75,7 +75,7 @@ public class CrossValidation {
      */
     public void evaluateMeasure(final CharSequence measureName) {
         evaluationMeasureNames.add(measureName);
-    }
+       }
 
     /**
      * Set the number of cross-validation repeats. When more than 1, repeats are done with different folds and results reported

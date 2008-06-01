@@ -73,16 +73,30 @@ public class LoadClassificationProblem {
 
         // output all columns
         labelColumnIndex = table.getColumnIndex(labelColumnIdf);
+        final boolean oneClass;
 
         this.labelValueGroups = labelValueGroups;
         groupToCodedLabel = new HashMap<Set<String>, Integer>();
-        assert labelValueGroups.size() == 2 : "Classification requires exactly two label groups.";
-        final Iterator<Set<String>> it = labelValueGroups.iterator();
-        final Set<String> labelGroup0 = it.next();  // negative class
-        final Set<String> labelGroup1 = it.next();  // positive class
+        if (labelValueGroups.size() == 2) {
+            //: "Classification requires exactly two label groups.";
 
-        groupToCodedLabel.put(labelGroup0, -1);
-        groupToCodedLabel.put(labelGroup1, 1);
+
+            final Iterator<Set<String>> it = labelValueGroups.iterator();
+            final Set<String> labelGroup0 = it.next();  // negative class
+            final Set<String> labelGroup1 = it.next();  // positive class
+
+            groupToCodedLabel.put(labelGroup0, -1);
+            groupToCodedLabel.put(labelGroup1, 1);
+        } else if (labelValueGroups.size() == 1 || labelValueGroups.size() > 2) {
+            //one class or multi-class problem:
+            // recode classes as 1, 2, 3, ..
+            for (int classIndex = 0; classIndex < labelValueGroups.size(); classIndex++) {
+                final Set<String> labelGroupForClassIndex = labelValueGroups.get(classIndex);
+                groupToCodedLabel.put(labelGroupForClassIndex, classIndex + 1);
+            }
+        }
+        oneClass = labelValueGroups.size() == 1;
+
 
         final RowProcessor rowProcessor = new RowProcessor(RowProcessor.buildColumnIndices(table, null)) {
 
@@ -100,26 +114,28 @@ public class LoadClassificationProblem {
                 if (label == 0) {
                     label = -1; // recode 0 -> -1 for libsvm.
                 }
+                if (!oneClass || (oneClass && label != -1)) {
+                    // When training a one-class predictor, do not load samples from other classes than the one class.
+                    final int numberOfFeatures = columnIndices.length - 1;
+                    final int instanceIndex = problem.addInstance(numberOfFeatures);
+                    problem.setLabel(instanceIndex, label);
 
-                final int numberOfFeatures = columnIndices.length - 1;
-                final int instanceIndex = problem.addInstance(numberOfFeatures);
-                problem.setLabel(instanceIndex, label);
+                    int featureIndex = 1;
+                    for (final int columnIndex : columnIndices) {
 
-                int featureIndex = 1;
-                for (final int columnIndex : columnIndices) {
+                        if (columnIndex != labelColumnIndex) {
 
-                    if (columnIndex != labelColumnIndex) {
+                            // features:
+                            double value = table.getDoubleValue(columnIndex, ri);
 
-                        // features:
-                        double value = table.getDoubleValue(columnIndex, ri);
+                            if (value != value) { // NaN case
+                                value = 0;
+                            }
+                            //  System.out.println(String.format("Loading feature index %d probeId %s",featureIndex-1, table.getIdentifier(columnIndex)));
+                            problem.setFeature(instanceIndex, featureIndex - 1, value);
+                            featureIndex += 1;
 
-                        if (value != value) { // NaN case
-                            value = 0;
                         }
-                      //  System.out.println(String.format("Loading feature index %d probeId %s",featureIndex-1, table.getIdentifier(columnIndex)));
-                        problem.setFeature(instanceIndex, featureIndex - 1, value);
-                        featureIndex += 1;
-
                     }
                 }
                 currentRowIndex++;
