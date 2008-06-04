@@ -59,13 +59,13 @@ public abstract class ClassificationModel {
 
     public static ClassificationHelper load(final String modelFilename, final String modelParameters) throws IOException {
         final ClassificationHelper helper = new ClassificationHelper();
-        if (modelFilename.contains("libSVM")) {
+        if (!modelParameters.contains("wekaClass")) {
 
             helper.model = new LibSvmModel(modelFilename);
             helper.classifier = new LibSvmClassifier();
             helper.parameters = new LibSvmParameters();
 
-        } else if (modelFilename.contains("weka!")) {
+        } else if (modelParameters.contains("wekaClass")) {
             try {
                 helper.classifier = new WekaClassifier((weka.classifiers.Classifier) BinIO.loadObject(modelFilename));
 
