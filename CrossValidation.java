@@ -75,7 +75,7 @@ public class CrossValidation {
      */
     public void evaluateMeasure(final CharSequence measureName) {
         evaluationMeasureNames.add(measureName);
-       }
+    }
 
     /**
      * Set the number of cross-validation repeats. When more than 1, repeats are done with different folds and results reported
@@ -215,7 +215,7 @@ public class CrossValidation {
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
         try {
             evaluate(decisionList, trueLabelList, evaluationMeasureNames, measure, "", useRServer);
-                     } catch (Exception e) {
+        } catch (Exception e) {
             LOG.warn("cannot evaluate with ROCR");
         }
         return measure;
@@ -343,20 +343,21 @@ public class CrossValidation {
             }
         }
     }
+
     /**
-        * Evaluate a variety of performance measures with <a href="http://rocr.bioinf.mpi-sb.mpg.de/ROCR.pdf">ROCR</a>.
-        *
-        * @param decisionValues Larger values indicate better confidence that the instance belongs to class 1.
-        * @param labels         Values of -1 or 0 indicate that the instance belongs to class 0, values of 1 indicate that the
-        *                       instance belongs to class 1.
-        * @param measureNames   Name of performance measures to evaluate.
-        * @param measure        Where performance values will be stored.
-        * @see #evaluateMeasure
-        */
+     * Evaluate a variety of performance measures with <a href="http://rocr.bioinf.mpi-sb.mpg.de/ROCR.pdf">ROCR</a>.
+     *
+     * @param decisionValues Larger values indicate better confidence that the instance belongs to class 1.
+     * @param labels         Values of -1 or 0 indicate that the instance belongs to class 0, values of 1 indicate that the
+     *                       instance belongs to class 1.
+     * @param measureNames   Name of performance measures to evaluate.
+     * @param measure        Where performance values will be stored.
+     * @see #evaluateMeasure
+     */
     public static void evaluate(final double[] decisionValues, final double[] labels,
-                    ObjectSet<CharSequence> measureNames,
-                    final EvaluationMeasure measure,
-                    final CharSequence measureNamePrefix, final boolean useRServer) {
+                                ObjectSet<CharSequence> measureNames,
+                                final EvaluationMeasure measure,
+                                final CharSequence measureNamePrefix, final boolean useRServer) {
         measureNames = evaluateMCC(decisionValues, labels, measureNames, measure);
         if (measureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
@@ -366,19 +367,43 @@ public class CrossValidation {
     }
 
     public static void evaluate(final ObjectList<double[]> decisionList, final ObjectList<double[]> trueLabelList,
-                                final ObjectSet<CharSequence> evaluationMeasureNames, final EvaluationMeasure measure,
+                                ObjectSet<CharSequence> evaluationMeasureNames, final EvaluationMeasure measure,
                                 final CharSequence measureNamePrefix, final boolean useRServer) {
-    //      measureNames = evaluateMCC(decisionList, trueLabelList, evaluationMeasureNames, measure);
+        evaluationMeasureNames = evaluateMCC(decisionList, trueLabelList, evaluationMeasureNames, measure);
         if (evaluationMeasureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
-                // TODO: evaluateWithROCR(decisionValues, labels, measureNames, measure);
+                for (int i = 0; i < decisionList.size(); i++) {
+                    evaluateWithROCR(decisionList.get(i), trueLabelList.get(i), evaluationMeasureNames, measure, measureNamePrefix);
+                }
+
             }
         }
     }
 
+    private static ObjectSet<CharSequence> evaluateMCC(ObjectList<double[]> decisionValueList, ObjectList<double[]> trueLabelList,
+                                                       ObjectSet<CharSequence> evaluationMeasureNames, EvaluationMeasure measure) {
+        if (evaluationMeasureNames.contains("MCC")) {
+            final MatthewsCorrelationCalculator c = new MatthewsCorrelationCalculator();
+            // find optimal threshold across all splits:
+            c.thresholdIndependentMCC(decisionValueList, trueLabelList);
+            double optimalThreshold = c.optimalThreshold;
+            for (int i = 0; i < decisionValueList.size(); i++) {
+                final double mcc = c.evaluateMCC(optimalThreshold, decisionValueList.get(i), trueLabelList.get(i));
+                measure.addValue("MCC", mcc);
+
+            }
+            final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
+            measureNamesFiltered.addAll(evaluationMeasureNames);
+            measureNamesFiltered.remove("MCC");
+            return measureNamesFiltered;
+        } else {
+            return evaluationMeasureNames;
+        }
+    }
+
     private static ObjectSet<CharSequence> evaluateMCC(final double[] decisionValues,
-                    final double[] labels, final ObjectSet<CharSequence> measureNames,
-                    final EvaluationMeasure measure) {
+                                                       final double[] labels, final ObjectSet<CharSequence> measureNames,
+                                                       final EvaluationMeasure measure) {
         if (measureNames.contains("MCC")) {
             final MatthewsCorrelationCalculator c = new MatthewsCorrelationCalculator();
             final double mcc = c.thresholdIndependentMCC(decisionValues, labels);
@@ -478,7 +503,8 @@ public class CrossValidation {
                     // find the index of x.value which indicates a threshold more or equal to zero (for the decision value)
                     int thresholdGEZero = -1;
                     for (int index = thresholds.length - 1; index >= 0; index--) {
-                        if (thresholds[index] >= 0) {
+                        if (values[index] !=values[index]  ) continue;
+                        if (thresholds[index]  >= 0) {
                             thresholdGEZero = index;
                             break;
                         }
@@ -505,21 +531,21 @@ public class CrossValidation {
     }
 
     private static void adjustDecisionValues(final double[] decisionValues) {
-       /* // make values fit between 0 and 1
-        double min = Double.POSITIVE_INFINITY;
-        double max = Double.NEGATIVE_INFINITY;
+        /* // make values fit between 0 and 1
+       double min = Double.POSITIVE_INFINITY;
+       double max = Double.NEGATIVE_INFINITY;
 
-        for (double value : decisionValues) {
-            min = Math.min(min, value);
-            max = Math.max(max, value);
-        }
-        double range = max - min;
-        for (int i = 0; i < decisionValues.length; i++) {
-            boolean negativeClass = decisionValues[i] < 0;
-            double normalizedDecision = (decisionValues[i] + (0 - min)) / range;
-            decisionValues[i] = negativeClass ? 1 - normalizedDecision : normalizedDecision;
-        }
-         */
+       for (double value : decisionValues) {
+           min = Math.min(min, value);
+           max = Math.max(max, value);
+       }
+       double range = max - min;
+       for (int i = 0; i < decisionValues.length; i++) {
+           boolean negativeClass = decisionValues[i] < 0;
+           double normalizedDecision = (decisionValues[i] + (0 - min)) / range;
+           decisionValues[i] = negativeClass ? 1 - normalizedDecision : normalizedDecision;
+       }
+        */
     }
 
     private static double[] toDoubles(final RList rList) {
