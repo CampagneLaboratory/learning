@@ -51,8 +51,11 @@ public class WekaProblem implements ClassificationProblem {
     public WekaProblem(final WekaProblem wekaProblem, final IntSet keepInstanceSet,
                        final FeatureScaler scaler) {
         super();
-        dataset = new Instances(this.toString(), (FastVector) wekaProblem.attributes.copy(),
+        wekaProblem.createDataset(wekaProblem.dataset.numAttributes());
+        final FastVector copyOfAttributes = (FastVector)wekaProblem.attributes.copy();
+        dataset = new Instances(this.toString(), copyOfAttributes,
                 keepInstanceSet.size());
+        attributes=copyOfAttributes;
         for (int instanceIndex = 0; instanceIndex < wekaProblem.getSize(); instanceIndex++) {
             if (keepInstanceSet.contains(instanceIndex)) {
                 final Instance copyOfInstance =
@@ -94,10 +97,11 @@ public class WekaProblem implements ClassificationProblem {
     }
 
     public ClassificationProblem filter(final int instanceIndex) {
-        final IntSet set=new IntArraySet();
+        final IntSet set = new IntArraySet();
         set.add(instanceIndex);
         return filter(set);
     }
+
     public void setInstance(final int instanceIndex, final double label, final double[] features) {
         setLabel(instanceIndex, label);
         for (int featureIndex = 0; featureIndex < features.length; featureIndex++) {
@@ -142,33 +146,41 @@ public class WekaProblem implements ClassificationProblem {
 
             scaler.observeFeatureForTraining(numberOfFeatures, featureValues(featureIndex, allInstances), featureIndex);
         }
-        throw new InternalError("This method has not been tested");
-       // return new WekaProblem(this, allInstances, scaler);
+
+        return new WekaProblem(this, allInstances, scaler);
     }
 
     public ClassificationProblem scaleTestSet(final FeatureScaler scaler, final int testInstanceIndex) {
         final IntSet allInstances = new IntLinkedOpenHashSet();
         allInstances.add(testInstanceIndex);
-        throw new InternalError("This method has not been tested");
-      //        return new WekaProblem(this, allInstances, scaler);
+
+        return new WekaProblem(this, allInstances, scaler);
     }
 
     public double[] featureValues(final int featureIndex, final IntSet keepInstanceSet) {
-        int instanceIndex = 0;
+
         final DoubleList values = new DoubleArrayList();
-        for (int InstanceIndex = 0; instanceIndex < dataset.numInstances(); instanceIndex++) {
+        for (int instanceIndex = 0; instanceIndex < dataset.numInstances(); instanceIndex++) {
             if (keepInstanceSet.contains(instanceIndex)) {
                 final int attributeIndex = featureIndex + 1;
                 values.add(dataset.instance(instanceIndex).value(attributeIndex));
             }
             instanceIndex++;
         }
-        throw new InternalError("This method has not been tested");
-      //        return values.toDoubleArray();
+
+        return values.toDoubleArray();
     }
 
     public ClassificationProblem scaleFeatures(final FeatureScaler scaler, final IntSet testSetIndices, final boolean trainingMode) {
-       throw new InternalError("This method has not been implemented");
+        if (trainingMode) {
+            int numFeatures = dataset.numAttributes();
+            for (int featureIndex = 0; featureIndex < numFeatures; featureIndex++) {
+
+                scaler.observeFeatureForTraining(numFeatures, featureValues(featureIndex, testSetIndices), featureIndex);
+            }
+        }
+     
+        return new WekaProblem(this, testSetIndices, scaler);
     }
 
 
@@ -191,5 +203,15 @@ public class WekaProblem implements ClassificationProblem {
 
     public Instances getNative() {
         return dataset;
+    }
+
+    public double[] getFeatures(int instance2Index) {
+        final DoubleList values = new DoubleArrayList();
+        for (int attributeIndex = 1; attributeIndex < dataset.numAttributes(); attributeIndex++) {
+   
+            values.add(dataset.instance(instance2Index).value(attributeIndex));
+        }     
+
+        return values.toDoubleArray();
     }
 }
