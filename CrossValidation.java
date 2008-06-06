@@ -513,7 +513,7 @@ public class CrossValidation {
                         LOG.debug("result from R (" + performanceValueName + ") : "
                                 + values[thresholdGEZero]);
                     }
-                    measure.addValue(storedPerformanceMeasureName, values[thresholdGEZero]);
+                   if (thresholdGEZero!=-1) measure.addValue(storedPerformanceMeasureName, values[thresholdGEZero]);
                 }
             }
         } catch (Exception e) {
