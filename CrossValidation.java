@@ -434,7 +434,6 @@ public class CrossValidation {
 
         assert decisionValues.length == labels.length
                 : "number of predictions must match number of labels.";
-        adjustDecisionValues(decisionValues);
 
         for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
 
@@ -444,7 +443,7 @@ public class CrossValidation {
 
         }
         if (LOG.isDebugEnabled()) {
-            LOG.debug("normalized decisions: " + ArrayUtils.toString(decisionValues));
+            LOG.debug("decisions: " + ArrayUtils.toString(decisionValues));
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("labels: " + ArrayUtils.toString(labels));
@@ -530,23 +529,7 @@ public class CrossValidation {
         }
     }
 
-    private static void adjustDecisionValues(final double[] decisionValues) {
-        /* // make values fit between 0 and 1
-       double min = Double.POSITIVE_INFINITY;
-       double max = Double.NEGATIVE_INFINITY;
 
-       for (double value : decisionValues) {
-           min = Math.min(min, value);
-           max = Math.max(max, value);
-       }
-       double range = max - min;
-       for (int i = 0; i < decisionValues.length; i++) {
-           boolean negativeClass = decisionValues[i] < 0;
-           double normalizedDecision = (decisionValues[i] + (0 - min)) / range;
-           decisionValues[i] = negativeClass ? 1 - normalizedDecision : normalizedDecision;
-       }
-        */
-    }
 
     private static double[] toDoubles(final RList rList) {
         final Iterator it = rList.iterator();

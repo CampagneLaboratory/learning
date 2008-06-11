@@ -24,6 +24,7 @@ import edu.cornell.med.icb.learning.ClassificationProblem;
 import edu.cornell.med.icb.learning.Classifier;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang.ArrayUtils;
 import weka.core.Instances;
 
 /**
@@ -121,6 +122,7 @@ public class WekaClassifier implements Classifier {
             final double[] probs
                     = getWekaClassifier(this, trainingModel)
                     .distributionForInstance(getWekaProblem(problem).instance(instanceIndex));
+
             System.arraycopy(probs, 0, probabilities, 0, probs.length);
 
             double maxProb = Double.NEGATIVE_INFINITY;
@@ -131,7 +133,14 @@ public class WekaClassifier implements Classifier {
                     maxIndex = labelIndex;
                 }
             }
-            return labelIndex2LabelValue[maxIndex];
+            final double decision= labelIndex2LabelValue[maxIndex];
+             if (LOG.isDebugEnabled()) {
+                LOG.debug("decision values: " + ArrayUtils.toString(probabilities));
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("decision: " + decision);
+            }
+            return decision;
         } catch (Exception e) {
             LOG.error("Weka classifier has thrown exception.", e);
             return Double.NaN;
