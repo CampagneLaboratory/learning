@@ -287,7 +287,6 @@ public class CrossValidation {
                 : "number of predictions must match number of labels.";
 
         for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
-
             if (labels[i] < 0) {
                 labels[i] = 0;
             }
@@ -436,7 +435,6 @@ public class CrossValidation {
                 : "number of predictions must match number of labels.";
 
         for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
-
             if (labels[i] < 0) {
                 labels[i] = 0;
             }
@@ -502,7 +500,9 @@ public class CrossValidation {
                     // find the index of x.value which indicates a threshold more or equal to zero (for the decision value)
                     int thresholdGEZero = -1;
                     for (int index = thresholds.length - 1; index >= 0; index--) {
-                        if (values[index] !=values[index]  ) continue;
+                        if (values[index] != values[index]) {
+                            continue;
+                        }
                         if (thresholds[index]  >= 0) {
                             thresholdGEZero = index;
                             break;
@@ -512,7 +512,9 @@ public class CrossValidation {
                         LOG.debug("result from R (" + performanceValueName + ") : "
                                 + values[thresholdGEZero]);
                     }
-                   if (thresholdGEZero!=-1) measure.addValue(storedPerformanceMeasureName, values[thresholdGEZero]);
+                    if (thresholdGEZero != -1) {
+                        measure.addValue(storedPerformanceMeasureName, values[thresholdGEZero]);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -548,7 +550,7 @@ public class CrossValidation {
     }
 
     /**
-     * Checks decisionValues and lables and determins if we
+     * Checks decisionValues and labels and determines if we
      * can short-circuit the value based on pre-defined rules.
      * Returns null if the decision cannot be short-circuited
      * or the value
@@ -559,31 +561,35 @@ public class CrossValidation {
      */
     public static Double areaUnderRocCurvShortCircuit(
             final double[] decisionValues, final double[] labels) {
-
-        final VectorDetails decisionValueDetails = new VectorDetails(decisionValues);
-        final VectorDetails labelDetails = new VectorDetails(labels);
-
         Double shortCircuitValue = null;
         String debugStr = null;
-        if (labelDetails.isAllZeros()) {
-            if (decisionValueDetails.isAllPositive()) {
-                shortCircuitValue = 0.0;
-                debugStr = "++SHORTCIRCUIT: Label all zeros, decision all positive. Returning 0";
-            } else if (decisionValueDetails.isAllNegative()) {
-                shortCircuitValue = 1.0;
-                debugStr = "++SHORTCIRCUIT: Label all zeros, decision all negative. Returning 1";
-            } else {
-                debugStr = "++SHORTCIRCUIT: Label all zeros, decisions vary. This will fail ROC.";
-            }
-        } else if (labelDetails.isAllOnes()) {
-            if (decisionValueDetails.isAllPositive()) {
-                shortCircuitValue = 1.0;
-                debugStr = "++SHORTCIRCUIT: Label all ones, decision all positive. Returning 1";
-            } else if (decisionValueDetails.isAllNegative()) {
-                shortCircuitValue = 0.0;
-                debugStr = "++SHORTCIRCUIT: Label all ones, decision all negative. Returning 0";
-            } else {
-                debugStr = "++SHORTCIRCUIT: Label all ones, decisions vary. This will fail ROC.";
+
+        if (ArrayUtils.isEmpty(decisionValues) || ArrayUtils.isEmpty(labels)) {
+            debugStr = "++SHORTCIRCUIT: No labels or decision values. This will fail ROC.";
+        } else {
+            final VectorDetails decisionValueDetails = new VectorDetails(decisionValues);
+            final VectorDetails labelDetails = new VectorDetails(labels);
+
+            if (labelDetails.isAllZeros()) {
+                if (decisionValueDetails.isAllPositive()) {
+                    shortCircuitValue = 0.0;
+                    debugStr = "++SHORTCIRCUIT: Label all zeros, decision all positive. Returning 0";
+                } else if (decisionValueDetails.isAllNegative()) {
+                    shortCircuitValue = 1.0;
+                    debugStr = "++SHORTCIRCUIT: Label all zeros, decision all negative. Returning 1";
+                } else {
+                    debugStr = "++SHORTCIRCUIT: Label all zeros, decisions vary. This will fail ROC.";
+                }
+            } else if (labelDetails.isAllOnes()) {
+                if (decisionValueDetails.isAllPositive()) {
+                    shortCircuitValue = 1.0;
+                    debugStr = "++SHORTCIRCUIT: Label all ones, decision all positive. Returning 1";
+                } else if (decisionValueDetails.isAllNegative()) {
+                    shortCircuitValue = 0.0;
+                    debugStr = "++SHORTCIRCUIT: Label all ones, decision all negative. Returning 0";
+                } else {
+                    debugStr = "++SHORTCIRCUIT: Label all ones, decisions vary. This will fail ROC.";
+                }
             }
         }
 
