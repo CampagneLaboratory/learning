@@ -282,9 +282,16 @@ public class CrossValidation {
      * @return ROC AUC
      */
     public static double areaUnderRocCurveLOO(final double[] decisionValues, final double[] labels) {
+        if (ArrayUtils.isEmpty(decisionValues) || ArrayUtils.isEmpty(labels)) {
+            throw new IllegalArgumentException("There must be at least 1 label and predition."
+                    + " Predictions are empty: " + ArrayUtils.isEmpty(decisionValues)
+                    + " Labels are empty: " + ArrayUtils.isEmpty(labels));
+        }
 
-        assert decisionValues.length == labels.length
-                : "number of predictions must match number of labels.";
+        if (decisionValues.length != labels.length) {
+            throw new IllegalArgumentException("number of predictions (" + decisionValues.length
+                    + ") must match number of labels (" + labels.length + ").");
+        }
 
         for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
             if (labels[i] < 0) {
@@ -332,9 +339,8 @@ public class CrossValidation {
             return valueROC_AUC;
         } catch (Exception e) {
             // connection error or otherwise me
-            LOG.warn(
-                    "Cannot calculate area under the ROC curve. Make sure Rserve (R server) is configured and running.",
-                    e);
+            LOG.warn("Cannot calculate area under the ROC curve. Make sure Rserve (R server) "
+                    + "is configured and running.", e);
             return Double.NaN;
         } finally {
             if (connection != null) {
