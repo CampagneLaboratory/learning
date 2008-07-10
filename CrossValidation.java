@@ -58,9 +58,13 @@ public class CrossValidation {
     private static final Log LOG = LogFactory.getLog(CrossValidation.class);
 
     private ClassificationModel model;
-    final Classifier classifier;
-    final ClassificationProblem problem;
-    final ObjectSet<CharSequence> evaluationMeasureNames = new ObjectArraySet<CharSequence>();
+    private final Classifier classifier;
+    private final ClassificationProblem problem;
+    private final ObjectSet<CharSequence> evaluationMeasureNames =
+            new ObjectArraySet<CharSequence>();
+    private int repeatNumber = 1;
+    private RandomAdapter randomAdapter;
+    private boolean useRServer;
 
     private Class<? extends FeatureScaler> featureScalerClass;
 
@@ -88,8 +92,6 @@ public class CrossValidation {
 
         this.repeatNumber = repeatNumber;
     }
-
-    private int repeatNumber = 1;
 
     public CrossValidation(final Classifier classifier, final ClassificationProblem problem,
                            final RandomEngine randomEngine) {
@@ -258,8 +260,6 @@ public class CrossValidation {
         evaluate(decisionValues, labels, evaluationMeasureNames, measure, "", useRServer);
         return measure;
     }
-
-    boolean useRServer;
 
     /**
      * Setting this flag to false removes the dependency on the R server.
@@ -682,8 +682,6 @@ public class CrossValidation {
       measure.setRocAuc(areaUnderRocCurveLOO(decisionValues, labels));
       return measure;
     */
-
-    RandomAdapter randomAdapter;
 
     /**
      * Run cross-validation with k folds.
