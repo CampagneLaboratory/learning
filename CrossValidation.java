@@ -36,18 +36,15 @@ import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.rosuda.REngine.REXP;
-import org.rosuda.REngine.REXPDouble;
-import org.rosuda.REngine.REXPMismatchException;
-import org.rosuda.REngine.RList;
 import org.rosuda.REngine.Rserve.RConnection;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.Iterator;
 
 /**
  * Performs cross-validation for a configurable classifier.
@@ -73,7 +70,7 @@ public class CrossValidation {
      *
      * @param measureName Name of a performance measure supported by ROCR.
      *                    Valid names include:
-     *                    acc, err, fpr, fall,  tpr, rec, sens, fnr, miss, tnr, spec, ppv, prec, npv, pcfall, pcmiss,
+     *                    acc, err, fpr, fall, tpr, rec, sens, fnr, miss, tnr, spec, ppv, prec, npv, pcfall, pcmiss,
      *                    rpp,  rnp, phi, mat, mi, chisq, odds, lift, f, rch,  auc, prbe, cal,  mxe, rmse, sar, ecost, cost
      *                    See the ROCR documentation for definition of these measures.
      */
@@ -335,7 +332,9 @@ public class CrossValidation {
             final REXP expression = connection.eval(rCommand.toString());
 
             final double valueROC_AUC = expression.asDouble();
-            LOG.debug("result from R: " + valueROC_AUC);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("result from R: " + valueROC_AUC);
+            }
             return valueROC_AUC;
         } catch (Exception e) {
             // connection error or otherwise me
@@ -537,24 +536,6 @@ public class CrossValidation {
         }
     }
 
-
-
-    private static double[] toDoubles(final RList rList) {
-        final Iterator it = rList.iterator();
-        final DoubleList doubles = new DoubleArrayList();
-        while (it.hasNext()) {
-            final Object o = it.next();
-            if (o instanceof REXPDouble) {
-                try {
-                    doubles.add(((REXPDouble) o).asDouble());
-                } catch (REXPMismatchException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return doubles.toDoubleArray();
-    }
-
     /**
      * Checks decisionValues and labels and determines if we
      * can short-circuit the value based on pre-defined rules.
@@ -606,14 +587,17 @@ public class CrossValidation {
     }
 
     /**
-     * Report the area under the Receiver Operating Characteristic (ROC) curve. Estimates are done with a leave one out
-     * evaluation.
+     * Report the area under the Receiver Operating Characteristic (ROC) curve. Estimates are
+     * done with a leave one out evaluation.
      *
-     * @param decisionValues Decision values output by classifier. Larger values indicate more confidence in prediction
-     *                       of a positive label.
-     * @param labels         Correct label for item, can be 0 (negative class) or +1 (positive class).
+     * @param decisionValues Decision values output by classifier. Larger values indicate more
+     * confidence in prediction of a positive label.
+     * @param labels Correct label for item, can be 0 (negative class) or +1 (positive class).
+     * @param rocCurvefilename Name of the file to plot the pdf image to
      */
-    public static void plotRocCurveLOO(final double[] decisionValues, final double[] labels, final String rocCurvefilename) {
+    public static void plotRocCurveLOO(final double[] decisionValues,
+                                       final double[] labels,
+                                       final String rocCurvefilename) {
         assert decisionValues.length == labels.length : "number of predictions must match number of labels.";
         for (int i = 0; i < labels.length; i++) {   // for each training example, leave it out:
             if (decisionValues[i] < 0) {
@@ -624,17 +608,17 @@ public class CrossValidation {
             }
         }
 
+        // R server only understands unix style path. Convert windows to unix if needed:
+        final String plotFilename = FilenameUtils.separatorsToUnix(rocCurvefilename);
+        final File plotFile = new File(plotFilename);
+
         final RConnectionPool connectionPool = RConnectionPool.getInstance();
         RConnection connection = null;
 
-// CALL R ROC
+        // CALL R ROC
         try {
-// R server only understands unix style path. Convert windows to unix if needed:
-            final String filename = rocCurvefilename.replaceAll("[\\\\]", "/");
-//     System.out.println("filename: "+filename);
-            final File deleteThis = new File(filename);
-            if (deleteThis.exists()) {
-                deleteThis.delete();
+            if (plotFile.exists()) {
+                plotFile.delete();
             }
 
             connection = connectionPool.borrowConnection();
@@ -642,21 +626,20 @@ public class CrossValidation {
             connection.assign("labels", labels);
             final String cmd = " library(ROCR) \n"
                     + "pred.svm <- prediction(predictions, labels)\n"
-                    + "pdf(\"" + filename + "\", height=5, width=5)\n"
+                    + "pdf(\"" + plotFilename + "\", height=5, width=5)\n"
                     + "perf <- performance(pred.svm, measure = \"tpr\", x.measure = \"fpr\")\n"
                     + "plot(perf)\n"
                     + "dev.off()";
 
-            final REXP expression = connection.eval(
-                    cmd);  // attr(perf.rocOutAUC,"y.values")[[1]]
-
+            final REXP expression = connection.eval(cmd);  // attr(perf.rocOutAUC,"y.values")[[1]]
             final double valueROC_AUC = expression.asDouble();
-//System.out.println("result from R: " + valueROC_AUC);
+            // System.out.println("result from R: " + valueROC_AUC);
         } catch (Exception e) {
-            // connection error or otherwise me
-            LOG.warn(
-                    "Cannot plot ROC curve. Make sure Rserve (R server) is configured and running.",
-                    e);
+            // connection error or otherwise
+            LOG.warn("Cannot plot ROC curve to " + plotFilename +  ".  Make sure Rserve (R server) "
+                + "is configured and running and the owner of the Rserve process has permission "
+                    + "to write to the directory \""
+                    + FilenameUtils.getFullPath(plotFile.getAbsolutePath()) + "\"",  e);
         } finally {
             if (connection != null) {
                 connectionPool.returnConnection(connection);
