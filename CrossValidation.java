@@ -757,7 +757,10 @@ public class CrossValidation {
         ctable.average();
 
         measure.setContingencyTable(ctable);
-        //  measure.setRocAucValues(aucValues);
+
+        // The below line was previousl commented out? KCD 2008-09-29
+        measure.setRocAucValues(aucValues);
+
         measure.setF1Values(f1Values);
         return measure;
     }
