@@ -23,6 +23,7 @@ import libsvm.svm;
 import libsvm.svm_model;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * @author Fabien Campagne Date: Nov 20, 2007 Time: 5:35:52 PM
@@ -43,6 +44,11 @@ public class LibSvmModel extends ClassificationModel {
     @Override
     public void write(final String filename) throws IOException {
         svm.svm_save_model(filename, nativeModel);
+    }
+
+    @Override
+    public void write(final OutputStream stream) throws IOException {
+         svm.svm_save_model(stream, nativeModel);
     }
 
     public svm_model getNativeModel() {

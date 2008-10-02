@@ -27,8 +27,10 @@ import edu.cornell.med.icb.learning.weka.WekaParameters;
 import it.unimi.dsi.fastutil.io.BinIO;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang.ArrayUtils;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Abstracts a classification model.
@@ -36,64 +38,87 @@ import java.io.IOException;
  * @author Fabien Campagne Date: Nov 19, 2007 Time: 9:29:12 AM
  */
 public abstract class ClassificationModel {
+    /**
+     * Used to log informational and debug messages.
+     */
     private static final Log LOG = LogFactory.getLog(ClassificationModel.class);
 
     /**
      * Write the model to a file.
      *
      * @param filename Filename where to store the model.
-     * @throws IOException thrown if an error occurs writting filename.
+     * @throws IOException thrown if an error occurs writing filename.
      */
     public abstract void write(String filename) throws IOException;
 
     /**
+     * Write the model to a stream.
+     *
+     * @param stream stream where to store the model.
+     * @throws IOException thrown if an error occurs writing stream.
+     */
+    public abstract void write(OutputStream stream) throws IOException;
+
+    /**
      * Load a trained model from a file.
      *
-     * @param modelFilename
-     * @return
-     * @throws IOException
+     * @param filename Filename where to store the model.
+     * @throws IOException thrown if an error occurs writing filename.
+     * @return helper object for the classification model
      */
-    public static ClassificationHelper load(final String modelFilename) throws IOException {
-        return load(modelFilename, null);
+    public static ClassificationHelper load(final String filename) throws IOException {
+        return load(filename, null);
     }
 
-    public static ClassificationHelper load(final String modelFilename, final String modelParameters) throws IOException {
+    /**
+     * Load a trained model from a file.
+     *
+     * @param filename Filename where to store the model.
+     * @param parameters parameters for the model
+     * @throws IOException thrown if an error occurs writing filename.
+     * @return helper object for the classification model
+     */
+    public static ClassificationHelper load(final String filename,
+                                            final String parameters) throws IOException {
         final ClassificationHelper helper = new ClassificationHelper();
-        if (!modelParameters.contains("wekaClass")) {
-
-            helper.model = new LibSvmModel(modelFilename);
+        if (!parameters.contains("wekaClass")) {
+            helper.model = new LibSvmModel(filename);
             helper.classifier = new LibSvmClassifier();
             helper.parameters = new LibSvmParameters();
-
-        } else if (modelParameters.contains("wekaClass")) {
+        } else if (parameters.contains("wekaClass")) {
             try {
-                helper.classifier = new WekaClassifier((weka.classifiers.Classifier) BinIO.loadObject(modelFilename));
-
+                helper.classifier = new WekaClassifier((weka.classifiers.Classifier) BinIO.loadObject(filename));
                 helper.model = new WekaModel((WekaClassifier) helper.classifier);
                 helper.parameters = new WekaParameters();
             } catch (ClassNotFoundException e) {
                 LOG.error("Unable to load serialized weka model.", e);
             }
         } else {
-            LOG.error("Classifier model type not recognized. Cannot load.");
-            throw new InternalError("Classifier model type not recognized. Cannot load.");
+            final String message = "Classifier model type not recognized - Cannot load."
+                    + "Parameters were: " + parameters;
+            LOG.error(message);
+            throw new IllegalArgumentException(message);
         }
-        helper.parseParameters(helper.classifier, modelParameters == null ? extractModelParameters(modelFilename) :
-                splitModelParameters(modelParameters));
+        helper.parseParameters(helper.classifier, parameters == null
+                ? extractModelParameters(filename) : splitModelParameters(parameters));
         helper.classifier.setParameters(helper.parameters);
         return helper;
     }
 
     private static String[] extractModelParameters(final String modelFilename) {
         final String[] tokens = modelFilename.split("[_]");
-        assert tokens.length >= 2 : "model filename must have more than two fields separated by underscore characters";
+        if (tokens.length < 2) {
+            throw new IllegalArgumentException("Model filename must have more than two "
+                    + "fields separated by underscore characters.  Filename provided was: "
+                    +  modelFilename);
+        }
         return splitModelParameters(tokens[1]);
     }
 
     public static String[] splitModelParameters(final String parameterToken) {
         final String[] result = parameterToken.split("[,]");
         if (result.length == 1 && result[0].length() == 0) {
-            return new String[0];
+            return ArrayUtils.EMPTY_STRING_ARRAY;
         } else {
             return result;
         }

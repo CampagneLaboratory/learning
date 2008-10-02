@@ -55,7 +55,7 @@ public class WekaProblem implements ClassificationProblem {
         final FastVector copyOfAttributes = (FastVector)wekaProblem.attributes.copy();
         dataset = new Instances(this.toString(), copyOfAttributes,
                 keepInstanceSet.size());
-        attributes=copyOfAttributes;
+        attributes = copyOfAttributes;
         for (int instanceIndex = 0; instanceIndex < wekaProblem.getSize(); instanceIndex++) {
             if (keepInstanceSet.contains(instanceIndex)) {
                 final Instance copyOfInstance =

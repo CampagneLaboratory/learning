@@ -22,6 +22,7 @@ import edu.cornell.med.icb.learning.ClassificationModel;
 import it.unimi.dsi.fastutil.io.BinIO;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * @author Fabien Campagne Date: Nov 23, 2007 Time: 1:29:58 PM
@@ -40,10 +41,23 @@ public class WekaModel extends ClassificationModel {
      * Weka API.
      *
      * @param filename Filename to use to save the model.
-     * @throws IOException
+     * @throws IOException thrown if an error occurs writing file.
      */
     @Override
     public void write(final String filename) throws IOException {
         BinIO.storeObject(classifier.getNative(), filename);
+    }
+
+    /**
+     * Store the weka model as a serialized object. Not much we can do with it except load it
+     * again, but it is not clear how to save a model into a human-readable format from the
+     * Weka API.
+     *
+     * @param stream stream to use to save the model.
+     * @throws IOException thrown if an error occurs writing stream.
+     */
+    @Override
+    public void write(final OutputStream stream) throws IOException {
+        BinIO.storeObject(classifier.getNative(), stream);
     }
 }
