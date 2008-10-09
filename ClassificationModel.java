@@ -25,11 +25,12 @@ import edu.cornell.med.icb.learning.weka.WekaClassifier;
 import edu.cornell.med.icb.learning.weka.WekaModel;
 import edu.cornell.med.icb.learning.weka.WekaParameters;
 import it.unimi.dsi.fastutil.io.BinIO;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.lang.ArrayUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
@@ -73,9 +74,9 @@ public abstract class ClassificationModel {
     /**
      * Load a trained model from a file.
      *
-     * @param filename Filename where to store the model.
+     * @param filename Filename to load the model from
      * @param parameters parameters for the model
-     * @throws IOException thrown if an error occurs writing filename.
+     * @throws IOException thrown if an error occurs reading filename.
      * @return helper object for the classification model
      */
     public static ClassificationHelper load(final String filename,
@@ -99,20 +100,43 @@ public abstract class ClassificationModel {
             LOG.error(message);
             throw new IllegalArgumentException(message);
         }
-        helper.parseParameters(helper.classifier, parameters == null
-                ? extractModelParameters(filename) : splitModelParameters(parameters));
+        helper.parseParameters(helper.classifier, splitModelParameters(parameters));
         helper.classifier.setParameters(helper.parameters);
         return helper;
     }
 
-    private static String[] extractModelParameters(final String modelFilename) {
-        final String[] tokens = modelFilename.split("[_]");
-        if (tokens.length < 2) {
-            throw new IllegalArgumentException("Model filename must have more than two "
-                    + "fields separated by underscore characters.  Filename provided was: "
-                    +  modelFilename);
+    /**
+     * Load a trained model from a stream.
+     *
+     * @param stream InputStream to load the model from
+     * @param parameters parameters for the model
+     * @throws IOException thrown if an error occurs reading the stream
+     * @return helper object for the classification model
+     */
+    public static ClassificationHelper load(final InputStream stream,
+                                            final String parameters) throws IOException {
+        final ClassificationHelper helper = new ClassificationHelper();
+        if (!parameters.contains("wekaClass")) {
+            helper.model = new LibSvmModel(stream);
+            helper.classifier = new LibSvmClassifier();
+            helper.parameters = new LibSvmParameters();
+        } else if (parameters.contains("wekaClass")) {
+            try {
+                helper.classifier = new WekaClassifier((weka.classifiers.Classifier) BinIO.loadObject(stream));
+                helper.model = new WekaModel((WekaClassifier) helper.classifier);
+                helper.parameters = new WekaParameters();
+            } catch (ClassNotFoundException e) {
+                LOG.error("Unable to load serialized weka model.", e);
+            }
+        } else {
+            final String message = "Classifier model type not recognized - Cannot load."
+                    + "Parameters were: " + parameters;
+            LOG.error(message);
+            throw new IllegalArgumentException(message);
         }
-        return splitModelParameters(tokens[1]);
+        helper.parseParameters(helper.classifier, splitModelParameters(parameters));
+        helper.classifier.setParameters(helper.parameters);
+        return helper;
     }
 
     public static String[] splitModelParameters(final String parameterToken) {

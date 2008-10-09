@@ -23,6 +23,7 @@ import libsvm.svm;
 import libsvm.svm_model;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
@@ -33,7 +34,12 @@ public class LibSvmModel extends ClassificationModel {
 
     public LibSvmModel(final svm_model svm_model) {
         super();
-        this.nativeModel = svm_model;
+        nativeModel = svm_model;
+    }
+
+    public LibSvmModel(final InputStream stream) throws IOException {
+        super();
+        nativeModel = svm.svm_load_model(stream);
     }
 
     public LibSvmModel(final String modelFilename) throws IOException {
