@@ -173,7 +173,7 @@ public class WekaProblem implements ClassificationProblem {
 
     public ClassificationProblem scaleFeatures(final FeatureScaler scaler, final IntSet testSetIndices, final boolean trainingMode) {
         if (trainingMode) {
-            int numFeatures = dataset.numAttributes();
+            final int numFeatures = dataset.numAttributes();
             for (int featureIndex = 0; featureIndex < numFeatures; featureIndex++) {
 
                 scaler.observeFeatureForTraining(numFeatures, featureValues(featureIndex, testSetIndices), featureIndex);
@@ -205,7 +205,7 @@ public class WekaProblem implements ClassificationProblem {
         return dataset;
     }
 
-    public double[] getFeatures(int instance2Index) {
+    public double[] getFeatures(final int instance2Index) {
         final DoubleList values = new DoubleArrayList();
         for (int attributeIndex = 1; attributeIndex < dataset.numAttributes(); attributeIndex++) {
    

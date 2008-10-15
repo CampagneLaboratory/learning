@@ -384,13 +384,13 @@ public class CrossValidation {
         }
     }
 
-    private static ObjectSet<CharSequence> evaluateMCC(ObjectList<double[]> decisionValueList, ObjectList<double[]> trueLabelList,
-                                                       ObjectSet<CharSequence> evaluationMeasureNames, EvaluationMeasure measure) {
+    private static ObjectSet<CharSequence> evaluateMCC(final ObjectList<double[]> decisionValueList, final ObjectList<double[]> trueLabelList,
+                                                       final ObjectSet<CharSequence> evaluationMeasureNames, final EvaluationMeasure measure) {
         if (evaluationMeasureNames.contains("MCC")) {
             final MatthewsCorrelationCalculator c = new MatthewsCorrelationCalculator();
             // find optimal threshold across all splits:
             c.thresholdIndependentMCC(decisionValueList, trueLabelList);
-            double optimalThreshold = c.optimalThreshold;
+            final double optimalThreshold = c.optimalThreshold;
             for (int i = 0; i < decisionValueList.size(); i++) {
                 final double mcc = c.evaluateMCC(optimalThreshold, decisionValueList.get(i), trueLabelList.get(i));
                 measure.addValue("MCC", mcc);
