@@ -265,8 +265,9 @@ public class CrossValidation {
      */
     public void useRServer(final boolean calculate) {
         this.useRServer = calculate;
-
-
+        if (!useRServer) {
+          evaluationMeasureNames.remove("auc");
+        }
     }
 
     /**
@@ -363,10 +364,38 @@ public class CrossValidation {
                                 final EvaluationMeasure measure,
                                 final CharSequence measureNamePrefix, final boolean useRServer) {
         measureNames = evaluateMCC(decisionValues, labels, measureNames, measure);
+        measureNames = evaluateSensitivityAndSpecificity(decisionValues, labels, measureNames, measure);
+
         if (measureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
                 evaluateWithROCR(decisionValues, labels, measureNames, measure, measureNamePrefix);
             }
+        }
+    }
+
+    private static ObjectSet<CharSequence> evaluateSensitivityAndSpecificity(double[] decisionValues, double[] labels, ObjectSet<CharSequence> measureNames, EvaluationMeasure measure) {
+        if (measureNames.contains("sens") || measureNames.contains("spec")) {
+            ContingencyTable ctable = new ContingencyTable();
+            int index = 0;
+            for (double decision : decisionValues) {
+                ctable.observeDecision(labels[index], decision >= 0 ? 1 : -1);
+                index++;
+            }
+            ctable.average();
+            if (measureNames.contains("sens")) {
+                measure.addValue("sens", ctable.getSensitivity());
+            }
+            if (measureNames.contains("spec")) {
+                measure.addValue("spec", ctable.getSpecificity());
+            }
+
+            final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
+            measureNamesFiltered.addAll(measureNames);
+            if (measureNames.contains("sens")) measureNamesFiltered.remove("sens");
+            if (measureNames.contains("spec")) measureNamesFiltered.remove("spec");
+            return measureNamesFiltered;
+        } else {
+            return measureNames;
         }
     }
 
@@ -475,7 +504,7 @@ public class CrossValidation {
             rCommand.append("flabels <- labels\n");
             rCommand.append("pred.svm <- prediction(predictions, labels)\n");
 
-            final REXP expression = connection.eval(rCommand.toString());
+            connection.eval(rCommand.toString());
 
             for (ObjectIterator<CharSequence> charSequenceObjectIterator = measureNames.iterator();
                  charSequenceObjectIterator.hasNext();) {
@@ -508,7 +537,7 @@ public class CrossValidation {
                         if (values[index] != values[index]) {
                             continue;
                         }
-                        if (thresholds[index]  >= 0) {
+                        if (thresholds[index] >= 0) {
                             thresholdGEZero = index;
                             break;
                         }
@@ -590,9 +619,9 @@ public class CrossValidation {
      * Report the area under the Receiver Operating Characteristic (ROC) curve. Estimates are
      * done with a leave one out evaluation.
      *
-     * @param decisionValues Decision values output by classifier. Larger values indicate more
-     * confidence in prediction of a positive label.
-     * @param labels Correct label for item, can be 0 (negative class) or +1 (positive class).
+     * @param decisionValues   Decision values output by classifier. Larger values indicate more
+     *                         confidence in prediction of a positive label.
+     * @param labels           Correct label for item, can be 0 (negative class) or +1 (positive class).
      * @param rocCurvefilename Name of the file to plot the pdf image to
      */
     public static void plotRocCurveLOO(final double[] decisionValues,
@@ -636,10 +665,10 @@ public class CrossValidation {
             // System.out.println("result from R: " + valueROC_AUC);
         } catch (Exception e) {
             // connection error or otherwise
-            LOG.warn("Cannot plot ROC curve to " + plotFilename +  ".  Make sure Rserve (R server) "
-                + "is configured and running and the owner of the Rserve process has permission "
+            LOG.warn("Cannot plot ROC curve to " + plotFilename + ".  Make sure Rserve (R server) "
+                    + "is configured and running and the owner of the Rserve process has permission "
                     + "to write to the directory \""
-                    + FilenameUtils.getFullPath(plotFile.getAbsolutePath()) + "\"",  e);
+                    + FilenameUtils.getFullPath(plotFile.getAbsolutePath()) + "\"", e);
         } finally {
             if (connection != null) {
                 connectionPool.returnConnection(connection);
