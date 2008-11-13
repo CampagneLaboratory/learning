@@ -364,7 +364,7 @@ public class CrossValidation {
                                 final EvaluationMeasure measure,
                                 final CharSequence measureNamePrefix, final boolean useRServer) {
         measureNames = evaluateMCC(decisionValues, labels, measureNames, measure);
-        measureNames = evaluateSensitivityAndSpecificity(decisionValues, labels, measureNames, measure);
+      //  measureNames = evaluateSensitivityAndSpecificity(decisionValues, labels, measureNames, measure);
 
         if (measureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
