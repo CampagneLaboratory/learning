@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2008 Institute for Computational Biomedicine,
+ * Copyright (C) 2007-2009 Institute for Computational Biomedicine,
  *                         Weill Medical College of Cornell University
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -22,9 +22,9 @@ import edu.cornell.med.icb.learning.ClassificationModel;
 import edu.cornell.med.icb.learning.ClassificationParameters;
 import edu.cornell.med.icb.learning.ClassificationProblem;
 import edu.cornell.med.icb.learning.Classifier;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.lang.ArrayUtils;
 import weka.core.Instances;
 
 /**
