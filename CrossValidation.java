@@ -135,6 +135,22 @@ public class CrossValidation {
     }
 
     /**
+     * transform continuous score into binary labels in int
+     * input <0 output -1, input >0, output 1
+     * @param decisions  Negative values predict the first class, while positive values predict the second class.
+     * @return
+     */
+    public static int [] getBinaryLabels(final double[] decisions) {
+        final int [] binaryDecisions = new int[decisions.length];
+        for (int i = 0; i < decisions.length; i++) {   // for each training example, leave it out:
+
+            final double decision = decisions[i];
+            final int binaryDecision = decision < 0 ? -1 : 1;
+            binaryDecisions[i] = binaryDecision;
+        }
+        return binaryDecisions;
+    }
+    /**
      * Report evaluation measures for predictions on a test set.
      *
      * @param decisions  Negative values predict the first class, while positive values predict the second class.
