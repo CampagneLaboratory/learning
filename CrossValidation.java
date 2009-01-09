@@ -140,13 +140,14 @@ public class CrossValidation {
      * @param decisions  Negative values predict the first class, while positive values predict the second class.
      * @return
      */
-    public static int [] getBinaryLabels(final double[] decisions) {
-        final int [] binaryDecisions = new int[decisions.length];
-        for (int i = 0; i < decisions.length; i++) {   // for each training example, leave it out:
+    public static IntList convertBinaryLabels(final DoubleList decisions) {
+        final IntList binaryDecisions = new IntArrayList ();
 
-            final double decision = decisions[i];
+        for (int i = 0; i < decisions.size(); i++) {   // for each training example, leave it out:
+
+            final double decision = decisions.getDouble(i);
             final int binaryDecision = decision < 0 ? -1 : 1;
-            binaryDecisions[i] = binaryDecision;
+            binaryDecisions.add( binaryDecision);
         }
         return binaryDecisions;
     }
