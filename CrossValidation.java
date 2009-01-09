@@ -146,7 +146,7 @@ public class CrossValidation {
         for (int i = 0; i < decisions.size(); i++) {   // for each training example, leave it out:
 
             final double decision = decisions.getDouble(i);
-            final int binaryDecision = decision < 0 ? -1 : 1;
+            final int binaryDecision = decision < 0 ? 1 : 2; //group 1 and group 2
             binaryDecisions.add( binaryDecision);
         }
         return binaryDecisions;
