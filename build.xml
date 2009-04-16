@@ -1,19 +1,4 @@
 <project name="icb-learning" default="test" basedir=".">
-    <tstamp>
-        <!-- current time for buildstamp purposes -->
-        <format property="buildstamp" pattern="yyyyMMddHHmmss"/>
-    </tstamp>
-    <tstamp>
-        <format property="year" pattern="yyyy"/>
-    </tstamp>
-
-    <property environment="env" />
-    <property name="classes" location="classes"/>
-    <property name="lib" location="lib"/>
-    <property name="src" location="src"/>
-    <property name="javadocs" location="javadocs"/>
-    <property name="logs" location="logs"/>
-    <property name="config" location="config"/>
     <property name="jarfile" value="icb-learning.jar"/>
 
     <!-- compiler and javadoc settings -->
@@ -22,6 +7,8 @@
     <property name="deprecation" value="on"/>
     <property name="ant.build.javac.source" value="1.5"/>
     <property name="ant.build.javac.target" value="1.5"/>
+
+    <import file="buildsupport/build.xml"/>
 
     <path id="compile.classpath">
         <fileset dir="${lib}">
@@ -40,12 +27,7 @@
     <!-- =================================================================== -->
     <!-- Initialization target                                               -->
     <!-- =================================================================== -->
-    <target name="init" depends="testsupport.init">
-        <tstamp/>
-        <mkdir dir="${classes}"/>
-        <!--  Create the logs directory -->
-        <mkdir dir="${logs}"/>
-    </target>
+    <target name="init" depends="buildsupport.init, testsupport.init"/>
 
     <target name="compile" depends="init" description="compiles the source code">
         <javac srcdir="${src}" destdir="${classes}" debug="${debug}"
@@ -73,7 +55,7 @@
     <!-- =================================================================== -->
     <target name="javadocs" depends="init" description="generates the API documentation">
         <mkdir dir="${javadocs}"/>
-        <javadoc packagenames="edu.cornell.med.*"
+        <javadoc packagenames="edu.*"
                  sourcepath="${src}" destdir="${javadocs}" encoding="UTF-8"
                  author="true" version="true" windowtitle="icb-learning API ${label} (${buildstamp})"
                  header="icb-learning API ${label} (${buildstamp})">
@@ -89,12 +71,8 @@
         </javadoc>
     </target>
 
-    <target name="clean" depends="testsupport.clean" description="Cleans up the directory">
-        <delete dir="${classes}"/>
-        <delete dir="${javadocs}"/>
-
+    <target name="clean" depends="buildsupport.init, testsupport.clean" description="Cleans up the directory">
         <delete file="${jarfile}"/>
-        <delete dir="${logs}"/>
     </target>
 
     <target name="cruisecontrol" depends="clean, cobertura-setup, findbugs,
