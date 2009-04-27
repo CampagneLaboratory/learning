@@ -390,11 +390,11 @@ public class CrossValidation {
         }
     }
 
-    private static ObjectSet<CharSequence> evaluateSensitivityAndSpecificity(double[] decisionValues, double[] labels, ObjectSet<CharSequence> measureNames, EvaluationMeasure measure) {
+    private static ObjectSet<CharSequence> evaluateSensitivityAndSpecificity(final double[] decisionValues, final double[] labels, final ObjectSet<CharSequence> measureNames, final EvaluationMeasure measure) {
         if (measureNames.contains("sens") || measureNames.contains("spec")) {
-            ContingencyTable ctable = new ContingencyTable();
+            final ContingencyTable ctable = new ContingencyTable();
             int index = 0;
-            for (double decision : decisionValues) {
+            for (final double decision : decisionValues) {
                 ctable.observeDecision(labels[index], decision >= 0 ? 1 : -1);
                 index++;
             }
@@ -408,8 +408,12 @@ public class CrossValidation {
 
             final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
             measureNamesFiltered.addAll(measureNames);
-            if (measureNames.contains("sens")) measureNamesFiltered.remove("sens");
-            if (measureNames.contains("spec")) measureNamesFiltered.remove("spec");
+            if (measureNames.contains("sens")) {
+                measureNamesFiltered.remove("sens");
+            }
+            if (measureNames.contains("spec")) {
+                measureNamesFiltered.remove("spec");
+            }
             return measureNamesFiltered;
         } else {
             return measureNames;

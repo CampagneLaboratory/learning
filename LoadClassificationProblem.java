@@ -160,7 +160,7 @@ public class LoadClassificationProblem {
 
             @Override
             public void processRow(final Table table, final Table.RowIterator ri)
-                    throws TypeMismatchException, InvalidColumnException {
+                    throws TypeMismatchException {
 
                 // label:
                 final double label = 0;   // We don't know what the label is.

@@ -206,8 +206,8 @@ public class ZScoreScalingRowProcessor extends FeatureTableScaler {
 
     private void observeStatistics(final MutableString featureId, final int featureIndex,
                                    final double[] trimmedArray) {
-        ZScoreCalculator calc = new ZScoreCalculator();
-        for (double value : trimmedArray) {
+        final ZScoreCalculator calc = new ZScoreCalculator();
+        for (final double value : trimmedArray) {
             calc.observe(value);
         }
         calc.calculateStats();
