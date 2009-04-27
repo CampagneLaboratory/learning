@@ -278,12 +278,12 @@ public class TestCrossValidation {
         final ObjectSet<CharSequence> measuresToTest = new ObjectArraySet<CharSequence>();
         measuresToTest.add("MCC");
         measuresToTest.add("mat");
-        int numRepeats = 50;
-        ObjectList<double[]> decisionsList = new ObjectArrayList<double[]>();
-        ObjectList<double[]> trueLabelsList = new ObjectArrayList<double[]>();
+        final int numRepeats = 50;
+        final ObjectList<double[]> decisionsList = new ObjectArrayList<double[]>();
+        final ObjectList<double[]> trueLabelsList = new ObjectArrayList<double[]>();
         for (int i = 0; i < numRepeats; i++) {
-            double[] decisions = generateRandomDecisions(100);
-            double[] trueLabels = generateRandomLabels(100, 0.25);
+            final double[] decisions = generateRandomDecisions(100);
+            final double[] trueLabels = generateRandomLabels(100, 0.25);
             decisionsList.add(decisions);
             trueLabelsList.add(trueLabels);
         }
@@ -297,8 +297,8 @@ public class TestCrossValidation {
     }
 
 
-    private double[] generateRandomLabels(int dimension, double ratioOfPositives) {
-        double[] labels = new double[dimension];
+    private double[] generateRandomLabels(final int dimension, final double ratioOfPositives) {
+        final double[] labels = new double[dimension];
         for (int i = 0; i < dimension; i++) {
             labels[i] = randomEngine.nextDouble() >= (1 - ratioOfPositives) ? 1 : 0;
         }
@@ -307,8 +307,8 @@ public class TestCrossValidation {
 
     RandomEngine randomEngine = new MersenneTwister();
 
-    private double[] generateRandomDecisions(int dimension) {
-        double[] decisions = new double[dimension];
+    private double[] generateRandomDecisions(final int dimension) {
+        final double[] decisions = new double[dimension];
         for (int i = 0; i < dimension; i++) {
             decisions[i] = randomEngine.nextDouble();
         }

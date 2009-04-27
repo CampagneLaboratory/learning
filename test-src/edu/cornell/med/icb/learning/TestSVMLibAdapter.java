@@ -4,8 +4,9 @@ import edu.cornell.med.icb.learning.libsvm.LibSvmProblem;
 import edu.cornell.med.icb.learning.weka.WekaProblem;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import junit.framework.TestCase;
+import static junit.framework.Assert.assertEquals;
 import org.apache.commons.lang.ArrayUtils;
+import static org.junit.Assert.assertNotSame;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -15,7 +16,7 @@ import java.util.Arrays;
  *         Date: Mar 30, 2008
  *         Time: 3:04:32 PM
  */
-public class TestSVMLibAdapter extends TestCase {
+public class TestSVMLibAdapter {
     @Test
     public void testCreateProblem() {
         final LibSvmProblem problem = new LibSvmProblem();
@@ -25,14 +26,14 @@ public class TestSVMLibAdapter extends TestCase {
         Arrays.fill(features, 1);
         problem.setInstance(instanceIndex, label, features);
         final double[] newFeatures = problem.getFeatures(instanceIndex);
-        assertEquals(features, newFeatures);
+        assertArrayEquals(features, newFeatures);
 
         final FeatureScaler scaler = new MultiplyScalingProcessor(3.6);
         final ClassificationProblem scaledProblem = problem.scaleTraining(scaler);
         final double[] expectedFeatures = new double[10];
         Arrays.fill(expectedFeatures, 3.6);
         final double[] scaledFeatures = ((LibSvmProblem) scaledProblem).getFeatures(instanceIndex);
-        assertEquals(scaledFeatures, expectedFeatures);
+        assertArrayEquals(scaledFeatures, expectedFeatures);
 
     }
 
@@ -47,14 +48,14 @@ public class TestSVMLibAdapter extends TestCase {
         Arrays.fill(features, 1);
         problem.setInstance(instanceIndex, label, features);
         final double[] newFeatures = problem.getFeatures(instanceIndex);
-        assertEquals(features, newFeatures);
+        assertArrayEquals(features, newFeatures);
 
         final int instance2Index = problem.addInstance(10);
         final double label2 = 1;
         Arrays.fill(features2, 2);
         problem.setInstance(instance2Index, label2, features2);
         final double[] newFeatures2 = problem.getFeatures(instance2Index);
-        assertEquals(features2, newFeatures2);
+        assertArrayEquals(features2, newFeatures2);
 
         final FeatureScaler scaler = new MultiplyScalingProcessor(3.6);
         final ClassificationProblem scaledProblem = problem.scaleTraining(scaler);
@@ -63,45 +64,46 @@ public class TestSVMLibAdapter extends TestCase {
         final double[] expectedFeatures2 = new double[10];
         Arrays.fill(expectedFeatures2, 2 * 3.6);
         final double[] scaledFeatures = ((LibSvmProblem) scaledProblem).getFeatures(instanceIndex);
-        assertEquals(scaledFeatures, expectedFeatures);
+        assertArrayEquals(scaledFeatures, expectedFeatures);
         final double[] scaledFeatures2 = ((LibSvmProblem) scaledProblem).getFeatures(instance2Index);
-        assertEquals(scaledFeatures2, expectedFeatures2);
+        assertArrayEquals(scaledFeatures2, expectedFeatures2);
 
     }
+
     @Test
-       public void testCreateProblemMultiInstancesWeka() {
-           final WekaProblem problem = new WekaProblem();
-           final double[] features = new double[10];
-           final double[] features2 = new double[10];
+    public void testCreateProblemMultiInstancesWeka() {
+        final WekaProblem problem = new WekaProblem();
+        final double[] features = new double[10];
+        final double[] features2 = new double[10];
 
-           final int instanceIndex = problem.addInstance(10);
-           final double label = 0;
-           Arrays.fill(features, 1);
-           problem.setInstance(instanceIndex, label, features);
-           final double[] newFeatures = problem.getFeatures(instanceIndex);
-           assertEquals(features, newFeatures);
+        final int instanceIndex = problem.addInstance(10);
+        final double label = 0;
+        Arrays.fill(features, 1);
+        problem.setInstance(instanceIndex, label, features);
+        final double[] newFeatures = problem.getFeatures(instanceIndex);
+        assertArrayEquals(features, newFeatures);
 
-           final int instance2Index = problem.addInstance(10);
-           final double label2 = 1;
-           Arrays.fill(features2, 2);
-           problem.setInstance(instance2Index, label2, features2);
-           final double[] newFeatures2 = problem.getFeatures(instance2Index);
-           assertEquals(features2, newFeatures2);
+        final int instance2Index = problem.addInstance(10);
+        final double label2 = 1;
+        Arrays.fill(features2, 2);
+        problem.setInstance(instance2Index, label2, features2);
+        final double[] newFeatures2 = problem.getFeatures(instance2Index);
+        assertArrayEquals(features2, newFeatures2);
 
-           final FeatureScaler scaler = new MultiplyScalingProcessor(3.6);
-           final ClassificationProblem scaledProblem = problem.scaleTraining(scaler);
-           final double[] expectedFeatures = new double[10];
-           Arrays.fill(expectedFeatures, 3.6);
-           final double[] expectedFeatures2 = new double[10];
-           Arrays.fill(expectedFeatures2, 2 * 3.6);
-           final double[] scaledFeatures = ((WekaProblem) scaledProblem).getFeatures(instanceIndex);
-           assertEquals(scaledFeatures, expectedFeatures);
-           final double[] scaledFeatures2 = ((WekaProblem) scaledProblem).getFeatures(instance2Index);
-           assertEquals(scaledFeatures2, expectedFeatures2);
+        final FeatureScaler scaler = new MultiplyScalingProcessor(3.6);
+        final ClassificationProblem scaledProblem = problem.scaleTraining(scaler);
+        final double[] expectedFeatures = new double[10];
+        Arrays.fill(expectedFeatures, 3.6);
+        final double[] expectedFeatures2 = new double[10];
+        Arrays.fill(expectedFeatures2, 2 * 3.6);
+        final double[] scaledFeatures = ((WekaProblem) scaledProblem).getFeatures(instanceIndex);
+        assertArrayEquals(scaledFeatures, expectedFeatures);
+        final double[] scaledFeatures2 = ((WekaProblem) scaledProblem).getFeatures(instance2Index);
+        assertArrayEquals(scaledFeatures2, expectedFeatures2);
 
-       }
+    }
 
-    public void assertEquals(final double[] array1, final double[] array2) {
+    public void assertArrayEquals(final double[] array1, final double[] array2) {
         assertEquals(array1.length, array2.length);
         for (int i = 0; i < array1.length; i++) {
             assertEquals(array1[i], array2[i]);
@@ -187,7 +189,7 @@ public class TestSVMLibAdapter extends TestCase {
 
     }
 
-     @Test
+    @Test
     public void testScaleMinMaxMultiInstancesWeka() {
         final WekaProblem problem = new WekaProblem();
         // featureIndex                           0     1    2   3
