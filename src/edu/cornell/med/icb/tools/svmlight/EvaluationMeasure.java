@@ -103,7 +103,7 @@ public class EvaluationMeasure {
 
 
     public double getAccuracy() {
-        return 100d - getErrorRate();
+        return 100.0d - getErrorRate();
     }
 
     public double getF1Measure() {
