@@ -23,7 +23,7 @@ import cern.jet.random.engine.MersenneTwister;
 import cern.jet.random.engine.RandomEngine;
 import edu.cornell.med.icb.R.RConnectionPool;
 import edu.cornell.med.icb.learning.ContingencyTable;
-import edu.cornell.med.icb.tools.svmlight.EvaluationMeasure;
+import edu.cornell.med.icb.learning.tools.svmlight.EvaluationMeasure;
 import edu.mssm.crover.tables.ArrayTable;
 import edu.mssm.crover.tables.ColumnTypeException;
 import edu.mssm.crover.tables.InvalidColumnException;

@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package edu.cornell.med.icb.tools.svmlight;
+package edu.cornell.med.icb.learning.tools.svmlight;
 
 /**
  * An implementation of evaluation measure that locally saves performance values.

@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package edu.cornell.med.icb.tools.svmlight;
+package edu.cornell.med.icb.learning.tools.svmlight;
 
 import edu.cornell.med.icb.learning.ContingencyTable;
 import edu.cornell.med.icb.stat.ZScoreCalculator;
