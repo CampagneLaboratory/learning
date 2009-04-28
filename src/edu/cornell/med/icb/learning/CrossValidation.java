@@ -79,10 +79,10 @@ public class CrossValidation {
     }
 
     /**
-     * Set the number of cross-validation repeats. When more than 1, repeats are done with different folds and results reported
-     * averaged over all the fold repeats.
+     * Set the number of cross-validation repeats. When more than 1, repeats are done with
+     * different folds and results reported averaged over all the fold repeats.
      *
-     * @param repeatNumber
+     * @param repeatNumber The number of repeats
      */
     public void setRepeatNumber(final int repeatNumber) {
         assert repeatNumber >= 1 : "Number of repeats must be at least one.";
@@ -135,26 +135,29 @@ public class CrossValidation {
     }
 
     /**
-     * transform continuous score into binary labels in int
+     * Transform continuous score into binary labels in int.
      * input <0 output -1, input >0, output 1
-     * @param decisions  Negative values predict the first class, while positive values predict the second class.
+     * @param decisions  Negative values predict the first class, while positive values predict
+     * the second class.
      * @return
      */
     public static IntList convertBinaryLabels(final DoubleList decisions) {
-        final IntList binaryDecisions = new IntArrayList ();
+        final IntList binaryDecisions = new IntArrayList();
 
         for (int i = 0; i < decisions.size(); i++) {   // for each training example, leave it out:
 
             final double decision = decisions.getDouble(i);
             final int binaryDecision = decision < 0 ? -1 : 1; //group -1 and group 1
-            binaryDecisions.add( binaryDecision);
+            binaryDecisions.add(binaryDecision);
         }
         return binaryDecisions;
     }
+
     /**
      * Report evaluation measures for predictions on a test set.
      *
-     * @param decisions  Negative values predict the first class, while positive values predict the second class.
+     * @param decisions Negative values predict the first class, while positive values predict
+     * the second class.
      * @param trueLabels label=0 encodes the first class, label=1 the second class.
      * @return
      */
@@ -195,7 +198,8 @@ public class CrossValidation {
     /**
      * Report evaluation measures for predictions on a test set.
      *
-     * @param decisionList  Negative values predict the first class, while positive values predict the second class.
+     * @param decisionList Negative values predict the first class, while positive values
+     * predict the second class.
      * @param trueLabelList label=0 encodes the first class, label=1 the second class.
      * @return
      */
@@ -250,7 +254,7 @@ public class CrossValidation {
         final double[] labels = new double[problem.getSize()];
 
         final FeatureScaler scaler = resetScaler();
-        final double[] probs = {0d, 0d};
+        final double[] probs = { 0.0d, 0.0d };
 
         for (int testInstanceIndex = 0; testInstanceIndex < problem.getSize(); testInstanceIndex++)
         {   // for each training example, leave it out:
@@ -276,20 +280,21 @@ public class CrossValidation {
     }
 
     /**
-     * Setting this flag to false removes the dependency on the R server.
-     *
-     * @param calculate If True, use an RServer to evaluate area under the roc curve. If False, skip the calculation.
+     * Indicate whether or not the RServe process should be used.  Setting this flag to false
+     * removes the dependency on the R server.
+     * @param useRServer If True, use an RServer to evaluate area under the roc curve.
+     * If False, skip the calculation.
      */
-    public void useRServer(final boolean calculate) {
-        this.useRServer = calculate;
-        if (!useRServer) {
-          evaluationMeasureNames.remove("auc");
+    public void useRServer(final boolean useRServer) {
+        this.useRServer = useRServer;
+        if (!this.useRServer) {
+            evaluationMeasureNames.remove("auc");
         }
     }
 
     /**
      * Report the area under the Receiver Operating Characteristic (ROC) curve.
-     * See http://pages.cs.wisc.edu/~richm/programs/AUC/
+     * See <a href="http://pages.cs.wisc.edu/~richm/programs/AUC/">http://pages.cs.wisc.edu/~richm/programs/AUC/</a>
      *
      * @param decisionValues Larger values indicate better confidence that the instance belongs to class 1.
      * @param labels         Values of -1 or 0 indicate that the instance belongs to class 0, values of 1 indicate that the
@@ -381,7 +386,7 @@ public class CrossValidation {
                                 final EvaluationMeasure measure,
                                 final CharSequence measureNamePrefix, final boolean useRServer) {
         measureNames = evaluateMCC(decisionValues, labels, measureNames, measure);
-      //  measureNames = evaluateSensitivityAndSpecificity(decisionValues, labels, measureNames, measure);
+        //  measureNames = evaluateSensitivityAndSpecificity(decisionValues, labels, measureNames, measure);
 
         if (measureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
@@ -459,8 +464,8 @@ public class CrossValidation {
                                                        final double[] labels, final ObjectSet<CharSequence> measureNames,
                                                        final EvaluationMeasure measure) {
         if (measureNames.contains("MCC")) {
-            final MatthewsCorrelationCalculator c = new MatthewsCorrelationCalculator();
-            final double mcc = c.thresholdIndependentMCC(decisionValues, labels);
+            final MatthewsCorrelationCalculator calculator = new MatthewsCorrelationCalculator();
+            final double mcc = calculator.thresholdIndependentMCC(decisionValues, labels);
             measure.addValue("MCC", mcc);
             final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
             measureNamesFiltered.addAll(measureNames);
@@ -484,7 +489,8 @@ public class CrossValidation {
      */
     public static void evaluateWithROCR(final double[] decisionValues, final double[] labels,
                                         final ObjectSet<CharSequence> measureNames,
-                                        final EvaluationMeasure measure, final CharSequence measureNamePrefix) {
+                                        final EvaluationMeasure measure,
+                                        final CharSequence measureNamePrefix) {
 
         assert decisionValues.length == labels.length
                 : "number of predictions must match number of labels.";
@@ -574,10 +580,8 @@ public class CrossValidation {
             }
         } catch (Exception e) {
             // connection error or otherwise
-            LOG.warn(
-                    "Cannot evaluate performance measure " + performanceValueName +
-                            ". Make sure Rserve (R server) is configured and running.",
-                    e);
+            LOG.warn("Cannot evaluate performance measure " + performanceValueName
+                    + ". Make sure Rserve (R server) is configured and running.", e);
 
         } finally {
             if (connection != null) {
@@ -774,7 +778,7 @@ public class CrossValidation {
                 final double[] decisionValues = new double[testSet.size()];
                 final double[] labels = new double[testSet.size()];
                 int index = 0;
-                final double[] probs = {0d, 0d};
+                final double[] probs = { 0.0d, 0.0d };
                 for (final int testInstanceIndex : testSet) {  // for each test example:
 
                     //  ClassificationProblem oneScaledTestInstanceProblem = problem.filter(testInstanceIndex);
@@ -816,38 +820,36 @@ public class CrossValidation {
     }
 
     private FeatureScaler resetScaler() {
+        FeatureScaler scaler = null;
         try {
-            final FeatureScaler scaler = featureScalerClass.newInstance();
-            return scaler;
-
+            scaler = featureScalerClass.newInstance();
         } catch (InstantiationException e) {
             LOG.error("Cannot instanciate feature scaler", e);
-            return null;
         } catch (IllegalAccessException e) {
             LOG.error("Cannot create feature scaler", e);
-            return null;
         }
+        return scaler;
     }
 
     /**
-     * Calculates semi-random fold assignments. Ideally fold assignments would be as random as possible. Because prediction
-     * results on test folds are evaluated with ROCR (to calculate ROC AUC), and because ROCR cannot handle situations
-     * where all the labels are only one category (i.e., all class 1 or all class 2), we force folds generated by this
+     * Calculates semi-random fold assignments. Ideally fold assignments would be as random as
+     * possible. Because prediction results on test folds are evaluated with ROCR (to calculate
+     * ROC AUC), and because ROCR cannot handle situations where all the labels are only one
+     * category (i.e., all class 1 or all class 2), we force folds generated by this
      * method to exclude this situation.
      *
      * @param k Number of folds
-     * @return An array where each element is the index of the fold to which the given instance of the training set belongs.
+     * @return An array where each element is the index of the fold to which the given instance
+     * of the training set belongs.
      */
     private int[] assignFolds(final int k) {
         final IntList indices = new IntArrayList();
         do {
             indices.clear();
             for (int i = 0; i < problem.getSize(); ++i) {
-                //         System.out.println("Assigning instance "+i+ " to fold "+(i % k));
                 indices.add(i % k);
             }
             Collections.shuffle(indices, randomAdapter);
-
         } while (invalidFold(indices, k));
         final int[] splitIndex = new int[problem.getSize()];
         indices.toArray(splitIndex);
