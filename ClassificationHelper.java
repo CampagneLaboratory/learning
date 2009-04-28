@@ -31,14 +31,11 @@ public class ClassificationHelper {
     public ClassificationModel model;
 
     public void parseParameters(final Classifier classifier, final String[] classifierParameters) {
-
         for (final String parameter : classifierParameters) {
             final double value = getParameterValue(parameter);
             final String key = getParameterKey(parameter);
-            
-            //  System.out.println("Setting parameter " + parameter);
             classifier.getParameters().setParameter(key, value);
-            this.parameters=classifier.getParameters();
+            parameters = classifier.getParameters();
         }
     }
 
@@ -62,8 +59,8 @@ public class ClassificationHelper {
             try {
                 Double.parseDouble(tokens[1]);
                 return tokens[0];
-            } catch (NumberFormatException e) {
-
+            } catch (NumberFormatException e) {  // NOPMD
+                // just return the original parameter
             }
         }
         return parameter;
