@@ -68,7 +68,7 @@ public abstract class ClassificationModel {
      * @return helper object for the classification model
      */
     public static ClassificationHelper load(final String filename) throws IOException {
-        return load(filename, null);
+        return load(filename, "");
     }
 
     /**
