@@ -27,18 +27,23 @@ import libsvm.svm_parameter;
  * @author Fabien Campagne Date: Oct 18, 2007 Time: 6:54:58 PM
  */
 public class LibSvmUtils {
+    /**
+     * Private constructor for utility class.
+     */
+    private LibSvmUtils() {
+        super();
+    }
 
     public static double[] calculateWeights(final svm_model model) {
-        if (model.param.kernel_type == svm_parameter.LINEAR &&
-                svm.svm_get_svm_type(model) == svm_parameter.C_SVC) {
+        if (model.param.kernel_type == svm_parameter.LINEAR
+                && svm.svm_get_svm_type(model) == svm_parameter.C_SVC) {
             final int numFeatures = model.SV[0].length;
             final double[] weights = new double[numFeatures];
             int supportVectorIndex = 0;
             for (final svm_node[] supportVector : model.SV) {
-                final double alpha_y = model.sv_coef[0][supportVectorIndex++] * model.label[0];  // alpha * y
+                final double alphaY = model.sv_coef[0][supportVectorIndex++] * model.label[0];  // alpha * y
                 for (final svm_node vectorElement : supportVector) {
-
-                    weights[vectorElement.index] += alpha_y * vectorElement.value;
+                    weights[vectorElement.index] += alphaY * vectorElement.value;
                 }
             }
             return weights;
