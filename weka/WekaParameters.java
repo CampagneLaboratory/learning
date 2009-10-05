@@ -36,14 +36,24 @@ public class WekaParameters extends ClassificationParameters {
     @Override
     public void setParameter(final String parameterName, final double value) {
         if (value == value) {
-            options.add(parameterName + " " + value);
+
+            options.add(parameterName);
+            if (Math.round(value) == value) {
+                options.add(Integer.toString((int) value));
+            } else {
+                options.add(Double.toString(value));
+            }
+
         } else {
             if (parameterName.startsWith("wekaClass=")) {
                 // extract the name of the class that implements the chosen weka classifier.
                 wekaClassifierClassName = parameterName.substring("wekaClass=".length());
             } else {
-                // value is NaN, parameter is boolean.
-                options.add(parameterName);
+                // value is NaN, parameter of the form -a=b.
+                // submit a and b as consecutive elements in options:
+                String[] tokens = parameterName.split("[=]");
+                options.add(tokens[0]);
+                options.add(tokens[1]);
             }
         }
     }
