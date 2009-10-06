@@ -33,6 +33,12 @@ public class WekaParameters extends ClassificationParameters {
 
     private String wekaClassifierClassName;
 
+    /*
+@Override
+public void setParameter(final String parameterName) {
+    options.add(parameterName);
+}
+    */
     @Override
     public void setParameter(final String parameterName, final double value) {
         if (value == value) {
@@ -52,8 +58,14 @@ public class WekaParameters extends ClassificationParameters {
                 // value is NaN, parameter of the form -a=b.
                 // submit a and b as consecutive elements in options:
                 String[] tokens = parameterName.split("[=]");
-                options.add(tokens[0]);
-                options.add(tokens[1]);
+                if (tokens.length == 2) {
+                    options.add(tokens[0]);
+                    options.add(tokens[1]);
+                } else {
+
+                    // only a parameter key is available (e.g., -B). Add it to the classifier options.
+                    options.add(tokens[0]);
+                }
             }
         }
     }
