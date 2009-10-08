@@ -22,6 +22,7 @@ import cern.jet.random.engine.RandomEngine;
 import edu.cornell.med.icb.R.RConnectionPool;
 import edu.cornell.med.icb.learning.tools.svmlight.EvaluationMeasure;
 import edu.cornell.med.icb.stat.MatthewsCorrelationCalculator;
+import edu.cornell.med.icb.stat.AreaUnderTheRocCurveCalculator;
 import edu.cornell.med.icb.util.RandomAdapter;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleArraySet;
@@ -137,8 +138,9 @@ public class CrossValidation {
     /**
      * Transform continuous score into binary labels in int.
      * input <0 output -1, input >0, output 1
-     * @param decisions  Negative values predict the first class, while positive values predict
-     * the second class.
+     *
+     * @param decisions Negative values predict the first class, while positive values predict
+     *                  the second class.
      * @return
      */
     public static IntList convertBinaryLabels(final DoubleList decisions) {
@@ -156,8 +158,8 @@ public class CrossValidation {
     /**
      * Report evaluation measures for predictions on a test set.
      *
-     * @param decisions Negative values predict the first class, while positive values predict
-     * the second class.
+     * @param decisions  Negative values predict the first class, while positive values predict
+     *                   the second class.
      * @param trueLabels label=0 encodes the first class, label=1 the second class.
      * @return
      */
@@ -198,8 +200,8 @@ public class CrossValidation {
     /**
      * Report evaluation measures for predictions on a test set.
      *
-     * @param decisionList Negative values predict the first class, while positive values
-     * predict the second class.
+     * @param decisionList  Negative values predict the first class, while positive values
+     *                      predict the second class.
      * @param trueLabelList label=0 encodes the first class, label=1 the second class.
      * @return
      */
@@ -254,10 +256,9 @@ public class CrossValidation {
         final double[] labels = new double[problem.getSize()];
 
         final FeatureScaler scaler = resetScaler();
-        final double[] probs = { 0.0d, 0.0d };
+        final double[] probs = {0.0d, 0.0d};
 
-        for (int testInstanceIndex = 0; testInstanceIndex < problem.getSize(); testInstanceIndex++)
-        {   // for each training example, leave it out:
+        for (int testInstanceIndex = 0; testInstanceIndex < problem.getSize(); testInstanceIndex++) {   // for each training example, leave it out:
 
             final ClassificationProblem currentTrainingSet = problem.exclude(testInstanceIndex);
 
@@ -282,8 +283,9 @@ public class CrossValidation {
     /**
      * Indicate whether or not the RServe process should be used.  Setting this flag to false
      * removes the dependency on the R server.
+     *
      * @param useRServer If True, use an RServer to evaluate area under the roc curve.
-     * If False, skip the calculation.
+     *                   If False, skip the calculation.
      */
     public void useRServer(final boolean useRServer) {
         this.useRServer = useRServer;
@@ -386,8 +388,7 @@ public class CrossValidation {
                                 final EvaluationMeasure measure,
                                 final CharSequence measureNamePrefix, final boolean useRServer) {
         measureNames = evaluateMCC(decisionValues, labels, measureNames, measure);
-        //  measureNames = evaluateSensitivityAndSpecificity(decisionValues, labels, measureNames, measure);
-
+        measureNames = evaluateAUCJava(decisionValues, labels, measureNames, measure);
         if (measureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
                 evaluateWithROCR(decisionValues, labels, measureNames, measure, measureNamePrefix);
@@ -429,6 +430,7 @@ public class CrossValidation {
                                 ObjectSet<CharSequence> evaluationMeasureNames, final EvaluationMeasure measure,
                                 final CharSequence measureNamePrefix, final boolean useRServer) {
         evaluationMeasureNames = evaluateMCC(decisionList, trueLabelList, evaluationMeasureNames, measure);
+        evaluationMeasureNames = evaluateAUCJava(decisionList, trueLabelList, evaluationMeasureNames, measure);
         if (evaluationMeasureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
                 for (int i = 0; i < decisionList.size(); i++) {
@@ -444,7 +446,7 @@ public class CrossValidation {
         if (evaluationMeasureNames.contains("MCC")) {
             final MatthewsCorrelationCalculator c = new MatthewsCorrelationCalculator();
             // find optimal threshold across all splits:
-            c.thresholdIndependentMCC(decisionValueList, trueLabelList);
+            c.thresholdIndependentStatistic(decisionValueList, trueLabelList);
             final double optimalThreshold = c.optimalThreshold;
             for (int i = 0; i < decisionValueList.size(); i++) {
                 final double mcc = c.evaluateMCC(optimalThreshold, decisionValueList.get(i), trueLabelList.get(i));
@@ -460,12 +462,52 @@ public class CrossValidation {
         }
     }
 
+    private static ObjectSet<CharSequence> evaluateAUCJava(final ObjectList<double[]> decisionValueList,
+                                                           final ObjectList<double[]> trueLabelList,
+                                                           final ObjectSet<CharSequence> evaluationMeasureNames,
+                                                           final EvaluationMeasure measure) {
+        if (evaluationMeasureNames.contains("AUCjava")) {
+            final AreaUnderTheRocCurveCalculator c = new AreaUnderTheRocCurveCalculator();
+            // find optimal threshold across all splits:
+            for (int i = 0; i < decisionValueList.size(); i++) {
+                double auc = c.thresholdIndependentStatistic(decisionValueList.get(i), trueLabelList.get(i));
+
+                measure.addValue("AUCjava", auc);
+            }
+            final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
+            measureNamesFiltered.addAll(evaluationMeasureNames);
+            measureNamesFiltered.remove("AUCjava");
+            return measureNamesFiltered;
+        } else {
+            return evaluationMeasureNames;
+        }
+    }
+
+    private static ObjectSet<CharSequence> evaluateAUCJava(final double[] decisionValueList,
+                                                           final double[] trueLabelList,
+                                                           final ObjectSet<CharSequence> evaluationMeasureNames,
+                                                           final EvaluationMeasure measure) {
+        if (evaluationMeasureNames.contains("AUCjava")) {
+            final AreaUnderTheRocCurveCalculator c = new AreaUnderTheRocCurveCalculator();
+            // find optimal threshold across all splits:
+            double auc = c.thresholdIndependentStatistic(decisionValueList, trueLabelList);
+            measure.addValue("AUCjava", auc);
+
+            final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
+            measureNamesFiltered.addAll(evaluationMeasureNames);
+            measureNamesFiltered.remove("AUCjava");
+            return measureNamesFiltered;
+        } else {
+            return evaluationMeasureNames;
+        }
+    }
+
     private static ObjectSet<CharSequence> evaluateMCC(final double[] decisionValues,
                                                        final double[] labels, final ObjectSet<CharSequence> measureNames,
                                                        final EvaluationMeasure measure) {
         if (measureNames.contains("MCC")) {
             final MatthewsCorrelationCalculator calculator = new MatthewsCorrelationCalculator();
-            final double mcc = calculator.thresholdIndependentMCC(decisionValues, labels);
+            final double mcc = calculator.thresholdIndependentStatistic(decisionValues, labels);
             measure.addValue("MCC", mcc);
             final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
             measureNamesFiltered.addAll(measureNames);
@@ -778,7 +820,7 @@ public class CrossValidation {
                 final double[] decisionValues = new double[testSet.size()];
                 final double[] labels = new double[testSet.size()];
                 int index = 0;
-                final double[] probs = { 0.0d, 0.0d };
+                final double[] probs = {0.0d, 0.0d};
                 for (final int testInstanceIndex : testSet) {  // for each test example:
 
                     //  ClassificationProblem oneScaledTestInstanceProblem = problem.filter(testInstanceIndex);
@@ -840,7 +882,7 @@ public class CrossValidation {
      *
      * @param k Number of folds
      * @return An array where each element is the index of the fold to which the given instance
-     * of the training set belongs.
+     *         of the training set belongs.
      */
     private int[] assignFolds(final int k) {
         final IntList indices = new IntArrayList();
