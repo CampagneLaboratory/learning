@@ -51,11 +51,11 @@ public class ContingencyTable {
 
     public double getErrorRate() {
 
-        return (getFN() + getFP()) / (getTP() + getFN() + getFP() + getTN()) * 100;
+        return (getFN() + getFP()) / (getTP() + getFN() + getFP() + getTN()) * 100d;
     }
 
     public double getPrecision() {
-        return getTP() / (getTP() + getFP()) * 100f;
+        return getTP() / (getTP() + getFP()) * 100d;
     }
 
     public double getFN() {
@@ -72,7 +72,7 @@ public class ContingencyTable {
 
 
     public double getRecall() {
-        return getTP() / (getTP() + getFN()) * 100f;    // TP/(TP+FN)
+        return getTP() / (getTP() + getFN()) * 100d;    // TP/(TP+FN)
     }
 
     public double getTP() {
