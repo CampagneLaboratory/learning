@@ -23,6 +23,8 @@ import edu.cornell.med.icb.R.RConnectionPool;
 import edu.cornell.med.icb.learning.tools.svmlight.EvaluationMeasure;
 import edu.cornell.med.icb.stat.MatthewsCorrelationCalculator;
 import edu.cornell.med.icb.stat.AreaUnderTheRocCurveCalculator;
+import edu.cornell.med.icb.stat.PredictionStatisticCalculator;
+import edu.cornell.med.icb.stat.RootMeanSquaredErrorCalculator;
 import edu.cornell.med.icb.util.RandomAdapter;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleArraySet;
@@ -158,7 +160,7 @@ public class CrossValidation {
     /**
      * Report evaluation measures for predictions on a test set.
      *
-     * @param decisions  Negative values predict the first class, while positive values predict
+     * @param decisions  Negative values predict the first class, while positive values (zero included) predict
      *                   the second class.
      * @param trueLabels label=0 encodes the first class, label=1 the second class.
      * @return
@@ -387,8 +389,9 @@ public class CrossValidation {
                                 ObjectSet<CharSequence> measureNames,
                                 final EvaluationMeasure measure,
                                 final CharSequence measureNamePrefix, final boolean useRServer) {
-        measureNames = evaluateMCC(decisionValues, labels, measureNames, measure);
-        measureNames = evaluateAUCJava(decisionValues, labels, measureNames, measure);
+        measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, new MatthewsCorrelationCalculator());
+        measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, new AreaUnderTheRocCurveCalculator());
+        measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, new RootMeanSquaredErrorCalculator());
         if (measureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
                 evaluateWithROCR(decisionValues, labels, measureNames, measure, measureNamePrefix);
@@ -430,7 +433,7 @@ public class CrossValidation {
                                 ObjectSet<CharSequence> evaluationMeasureNames, final EvaluationMeasure measure,
                                 final CharSequence measureNamePrefix, final boolean useRServer) {
         evaluationMeasureNames = evaluateMCC(decisionList, trueLabelList, evaluationMeasureNames, measure);
-        evaluationMeasureNames = evaluateAUCJava(decisionList, trueLabelList, evaluationMeasureNames, measure);
+        evaluationMeasureNames = evaluatePerformanceMeasure(decisionList, trueLabelList, evaluationMeasureNames, measure, new AreaUnderTheRocCurveCalculator());
         if (evaluationMeasureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
                 for (int i = 0; i < decisionList.size(); i++) {
@@ -443,78 +446,51 @@ public class CrossValidation {
 
     private static ObjectSet<CharSequence> evaluateMCC(final ObjectList<double[]> decisionValueList, final ObjectList<double[]> trueLabelList,
                                                        final ObjectSet<CharSequence> evaluationMeasureNames, final EvaluationMeasure measure) {
-        if (evaluationMeasureNames.contains("MCC")) {
-            final MatthewsCorrelationCalculator c = new MatthewsCorrelationCalculator();
-            // find optimal threshold across all splits:
-            c.thresholdIndependentStatistic(decisionValueList, trueLabelList);
-            final double optimalThreshold = c.optimalThreshold;
-            for (int i = 0; i < decisionValueList.size(); i++) {
-                final double mcc = c.evaluateMCC(optimalThreshold, decisionValueList.get(i), trueLabelList.get(i));
-                measure.addValue("MCC", mcc);
+        return evaluatePerformanceMeasure(decisionValueList, trueLabelList, evaluationMeasureNames, measure, new MatthewsCorrelationCalculator());
+    }
 
+    private static ObjectSet<CharSequence> evaluatePerformanceMeasure(final ObjectList<double[]> decisionValueList,
+                                                                      final ObjectList<double[]> trueLabelList,
+                                                                      final ObjectSet<CharSequence> evaluationMeasureNames,
+                                                                      final EvaluationMeasure measure,
+                                                                      final PredictionStatisticCalculator calculator) {
+        String measureName = calculator.getMeasureName();
+        if (evaluationMeasureNames.contains(measureName)) {
+
+            // find optimal threshold across all splits:
+            for (int i = 0; i < decisionValueList.size(); i++) {
+                double statistic = calculator.thresholdIndependentStatistic(decisionValueList.get(i), trueLabelList.get(i));
+
+                measure.addValue(measureName, statistic);
             }
             final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
             measureNamesFiltered.addAll(evaluationMeasureNames);
-            measureNamesFiltered.remove("MCC");
+            measureNamesFiltered.remove(measureName);
             return measureNamesFiltered;
         } else {
             return evaluationMeasureNames;
         }
     }
 
-    private static ObjectSet<CharSequence> evaluateAUCJava(final ObjectList<double[]> decisionValueList,
-                                                           final ObjectList<double[]> trueLabelList,
-                                                           final ObjectSet<CharSequence> evaluationMeasureNames,
-                                                           final EvaluationMeasure measure) {
-        if (evaluationMeasureNames.contains("AUCjava")) {
-            final AreaUnderTheRocCurveCalculator c = new AreaUnderTheRocCurveCalculator();
-            // find optimal threshold across all splits:
-            for (int i = 0; i < decisionValueList.size(); i++) {
-                double auc = c.thresholdIndependentStatistic(decisionValueList.get(i), trueLabelList.get(i));
+    private static ObjectSet<CharSequence> evaluatePerformanceMeasure(final double[] decisionValueList,
+                                                                      final double[] trueLabelList,
+                                                                      final ObjectSet<CharSequence> evaluationMeasureNames,
+                                                                      final EvaluationMeasure measure,
+                                                                      final PredictionStatisticCalculator calculator) {
+        final String measureName = calculator.getMeasureName();
+        if (evaluationMeasureNames.contains(measureName)) {
 
-                measure.addValue("AUCjava", auc);
-            }
-            final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
-            measureNamesFiltered.addAll(evaluationMeasureNames);
-            measureNamesFiltered.remove("AUCjava");
-            return measureNamesFiltered;
-        } else {
-            return evaluationMeasureNames;
-        }
-    }
-
-    private static ObjectSet<CharSequence> evaluateAUCJava(final double[] decisionValueList,
-                                                           final double[] trueLabelList,
-                                                           final ObjectSet<CharSequence> evaluationMeasureNames,
-                                                           final EvaluationMeasure measure) {
-        if (evaluationMeasureNames.contains("AUCjava")) {
-            final AreaUnderTheRocCurveCalculator c = new AreaUnderTheRocCurveCalculator();
             // find optimal threshold across all splits:
-            double auc = c.thresholdIndependentStatistic(decisionValueList, trueLabelList);
-            measure.addValue("AUCjava", auc);
+            double statistic = calculator.thresholdIndependentStatistic(decisionValueList, trueLabelList);
+            measure.addValue(measureName, statistic);         
+            measure.addValue(measureName + "-zero", calculator.evaluateStatisticAtThreshold(0, decisionValueList, trueLabelList));
 
             final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
             measureNamesFiltered.addAll(evaluationMeasureNames);
-            measureNamesFiltered.remove("AUCjava");
+            measureNamesFiltered.remove(measureName);
             return measureNamesFiltered;
         } else {
             return evaluationMeasureNames;
-        }
-    }
-
-    private static ObjectSet<CharSequence> evaluateMCC(final double[] decisionValues,
-                                                       final double[] labels, final ObjectSet<CharSequence> measureNames,
-                                                       final EvaluationMeasure measure) {
-        if (measureNames.contains("MCC")) {
-            final MatthewsCorrelationCalculator calculator = new MatthewsCorrelationCalculator();
-            final double mcc = calculator.thresholdIndependentStatistic(decisionValues, labels);
-            measure.addValue("MCC", mcc);
-            final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
-            measureNamesFiltered.addAll(measureNames);
-            measureNamesFiltered.remove("MCC");
-            return measureNamesFiltered;
-        } else {
-            return measureNames;
         }
     }
 
