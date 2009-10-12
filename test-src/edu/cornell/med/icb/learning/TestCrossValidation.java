@@ -296,6 +296,29 @@ public class TestCrossValidation {
         assertEquals(measure.getPerformanceValueStd("mat"), measure.getPerformanceValueStd("MCC"), 0.1);
     }
 
+     @Test
+    public void testAUCManySplits() {
+        final ObjectSet<CharSequence> measuresToTest = new ObjectArraySet<CharSequence>();
+        measuresToTest.add("AUC");
+        measuresToTest.add("auc");
+        final int numRepeats = 50;
+        final ObjectList<double[]> decisionsList = new ObjectArrayList<double[]>();
+        final ObjectList<double[]> trueLabelsList = new ObjectArrayList<double[]>();
+        for (int i = 0; i < numRepeats; i++) {
+            final double[] decisions = generateRandomDecisions(100);
+            final double[] trueLabels = generateRandomLabels(100, 0.25);
+            decisionsList.add(decisions);
+            trueLabelsList.add(trueLabels);
+        }
+
+        final EvaluationMeasure measure = CrossValidation.testSetEvaluation(decisionsList,
+                trueLabelsList,
+                measuresToTest, true);
+
+        assertEquals(measure.getPerformanceValueAverage("auc"), measure.getPerformanceValueAverage("AUC"), 0.1);
+        assertEquals(measure.getPerformanceValueStd("auc"), measure.getPerformanceValueStd("AUC"), 0.1);
+    }
+
     @Test
     public void testMCCOneSplit() {
         final ObjectSet<CharSequence> measuresToTest = new ObjectArraySet<CharSequence>();
