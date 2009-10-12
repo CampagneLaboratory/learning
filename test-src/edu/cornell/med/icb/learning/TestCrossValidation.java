@@ -296,6 +296,21 @@ public class TestCrossValidation {
         assertEquals(measure.getPerformanceValueStd("mat"), measure.getPerformanceValueStd("MCC"), 0.1);
     }
 
+    @Test
+    public void testMCCOneSplit() {
+        final ObjectSet<CharSequence> measuresToTest = new ObjectArraySet<CharSequence>();
+        measuresToTest.add("MCC");
+        measuresToTest.add("mat");
+
+        final double[] decisions = generateRandomDecisions(200);
+        final double[] trueLabels = generateRandomLabels(200, 0.25);
+        final EvaluationMeasure measure = CrossValidation.testSetEvaluation(decisions, trueLabels,
+                measuresToTest, true);
+
+        assertEquals(measure.getPerformanceValueAverage("mat"), measure.getPerformanceValueAverage("MCC"), 0.1);
+        assertEquals(measure.getPerformanceValueStd("mat"), measure.getPerformanceValueStd("MCC"), 0.1);
+    }
+
 
     private double[] generateRandomLabels(final int dimension, final double ratioOfPositives) {
         final double[] labels = new double[dimension];
