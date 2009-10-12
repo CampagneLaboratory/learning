@@ -388,13 +388,13 @@ public class CrossValidation {
     public static void evaluate(final double[] decisionValues, final double[] labels,
                                 ObjectSet<CharSequence> measureNames,
                                 final EvaluationMeasure measure,
-                                final CharSequence measureNamePrefix, final boolean useRServer) {
-        measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, new MatthewsCorrelationCalculator());
-        measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, new AreaUnderTheRocCurveCalculator());
-        measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, new RootMeanSquaredErrorCalculator());
+                                final CharSequence measureNameSuffix, final boolean useRServer) {
+        measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, measureNameSuffix, new MatthewsCorrelationCalculator());
+        measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, measureNameSuffix, new AreaUnderTheRocCurveCalculator());
+        measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, measureNameSuffix, new RootMeanSquaredErrorCalculator());
         if (measureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
-                evaluateWithROCR(decisionValues, labels, measureNames, measure, measureNamePrefix);
+                evaluateWithROCR(decisionValues, labels, measureNames, measure, measureNameSuffix);
             }
         }
     }
@@ -433,6 +433,7 @@ public class CrossValidation {
                                 ObjectSet<CharSequence> evaluationMeasureNames, final EvaluationMeasure measure,
                                 final CharSequence measureNamePrefix, final boolean useRServer) {
         evaluationMeasureNames = evaluateMCC(decisionList, trueLabelList, evaluationMeasureNames, measure);
+        //evaluationMeasureNames = evaluatePerformanceMeasure(decisionList, trueLabelList, evaluationMeasureNames, measure, new MatthewsCorrelationCalculator());
         evaluationMeasureNames = evaluatePerformanceMeasure(decisionList, trueLabelList, evaluationMeasureNames, measure, new AreaUnderTheRocCurveCalculator());
         if (evaluationMeasureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
@@ -446,7 +447,23 @@ public class CrossValidation {
 
     private static ObjectSet<CharSequence> evaluateMCC(final ObjectList<double[]> decisionValueList, final ObjectList<double[]> trueLabelList,
                                                        final ObjectSet<CharSequence> evaluationMeasureNames, final EvaluationMeasure measure) {
-        return evaluatePerformanceMeasure(decisionValueList, trueLabelList, evaluationMeasureNames, measure, new MatthewsCorrelationCalculator());
+        if (evaluationMeasureNames.contains("MCC")) {
+            final MatthewsCorrelationCalculator c = new MatthewsCorrelationCalculator();
+            // find optimal threshold across all splits:
+            c.thresholdIndependentStatistic(decisionValueList, trueLabelList);
+            final double optimalThreshold = c.optimalThreshold;
+            for (int i = 0; i < decisionValueList.size(); i++) {
+                final double mcc = c.evaluateMCC(optimalThreshold, decisionValueList.get(i), trueLabelList.get(i));
+                measure.addValue("MCC", mcc);
+
+            }
+            final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
+            measureNamesFiltered.addAll(evaluationMeasureNames);
+            measureNamesFiltered.remove("MCC");
+            return measureNamesFiltered;
+        } else {
+            return evaluationMeasureNames;
+        }
     }
 
     private static ObjectSet<CharSequence> evaluatePerformanceMeasure(final ObjectList<double[]> decisionValueList,
@@ -458,11 +475,14 @@ public class CrossValidation {
         if (evaluationMeasureNames.contains(measureName)) {
 
             // find optimal threshold across all splits:
+            calculator.thresholdIndependentStatistic(decisionValueList, trueLabelList);
+            final double optimalThreshold = calculator.optimalThreshold;
             for (int i = 0; i < decisionValueList.size(); i++) {
-                double statistic = calculator.thresholdIndependentStatistic(decisionValueList.get(i), trueLabelList.get(i));
-
+                final double statistic = calculator.evaluateStatisticAtThreshold(optimalThreshold, decisionValueList.get(i), trueLabelList.get(i));
                 measure.addValue(measureName, statistic);
+
             }
+
             final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
             measureNamesFiltered.addAll(evaluationMeasureNames);
             measureNamesFiltered.remove(measureName);
@@ -476,14 +496,14 @@ public class CrossValidation {
                                                                       final double[] trueLabelList,
                                                                       final ObjectSet<CharSequence> evaluationMeasureNames,
                                                                       final EvaluationMeasure measure,
-                                                                      final PredictionStatisticCalculator calculator) {
+                                                                      CharSequence measureNameSuffix, final PredictionStatisticCalculator calculator) {
         final String measureName = calculator.getMeasureName();
         if (evaluationMeasureNames.contains(measureName)) {
 
             // find optimal threshold across all splits:
             double statistic = calculator.thresholdIndependentStatistic(decisionValueList, trueLabelList);
-            measure.addValue(measureName, statistic);         
-            measure.addValue(measureName + "-zero", calculator.evaluateStatisticAtThreshold(0, decisionValueList, trueLabelList));
+            measure.addValue(measureName + measureNameSuffix, statistic);
+            measure.addValue(measureName + measureNameSuffix + "-zero", calculator.evaluateStatisticAtThreshold(0, decisionValueList, trueLabelList));
 
             final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
             measureNamesFiltered.addAll(evaluationMeasureNames);
