@@ -178,6 +178,7 @@ public class EvaluationMeasure {
         double sum = 0;
         final DoubleList values = name2Values.get(measureName.intern());
         if (values == null) {
+            if (measureName.equalsIgnoreCase("acc")) return getAccuracy();
             return Double.NaN;
         }
         for (final double value : values) {
