@@ -44,11 +44,11 @@ public class EvaluationMeasure {
     private static final Log LOG = LogFactory.getLog(EvaluationMeasure.class);
 
     public double getRocAuc() {
-        return getPerformanceValueAverage("auc");
+        return getPerformanceValueAverage("AUC");
     }
 
     public double getAucStdDev() {
-        return getPerformanceValueStd("auc");
+        return getPerformanceValueStd("AUC");
     }
 
     /**
