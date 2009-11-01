@@ -401,7 +401,6 @@ public class CrossValidation {
     public static void evaluate(final ObjectList<double[]> decisionList, final ObjectList<double[]> trueLabelList,
                                 ObjectSet<CharSequence> evaluationMeasureNames, final EvaluationMeasure measure,
                                 final CharSequence measureNamePrefix, final boolean useRServer) {
-        evaluationMeasureNames = evaluateMCC(decisionList, trueLabelList, evaluationMeasureNames, measure);
         evaluationMeasureNames = evaluatePerformanceMeasure(decisionList, trueLabelList, evaluationMeasureNames, measure, new MatthewsCorrelationCalculator());
         evaluationMeasureNames = evaluatePerformanceMeasure(decisionList, trueLabelList, evaluationMeasureNames, measure, new AreaUnderTheRocCurveCalculator());
         evaluationMeasureNames = evaluatePerformanceMeasure(decisionList, trueLabelList, evaluationMeasureNames, measure, new AccuracyCalculator());
@@ -453,6 +452,7 @@ public class CrossValidation {
             for (int i = 0; i < decisionValueList.size(); i++) {
                 final double statistic = calculator.evaluateStatisticAtThreshold(optimalThreshold, decisionValueList.get(i), trueLabelList.get(i));
                 measure.addValue(measureName, statistic);
+                measure.addValue(measureName + "-zero", calculator.evaluateStatisticAtThreshold(0, decisionValueList, trueLabelList));
 
             }
 
@@ -476,7 +476,8 @@ public class CrossValidation {
             // find optimal threshold across all splits:
             double statistic = calculator.thresholdIndependentStatistic(decisionValueList, trueLabelList);
             measure.addValue(measureName + measureNameSuffix, statistic);
-            measure.addValue(measureName + measureNameSuffix + "-zero", calculator.evaluateStatisticAtThreshold(0, decisionValueList, trueLabelList));
+
+            measure.addValue(measureName + "-zero", calculator.evaluateStatisticAtThreshold(0, decisionValueList, trueLabelList));
 
             final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
             measureNamesFiltered.addAll(evaluationMeasureNames);
@@ -548,7 +549,7 @@ public class CrossValidation {
                  charSequenceObjectIterator.hasNext();) {
                 final StringBuilder rCommandMeasure = new StringBuilder();
                 performanceValueName = charSequenceObjectIterator.next();
-                if (performanceValueName==null) continue;
+                if (performanceValueName == null) continue;
                 final CharSequence storedPerformanceMeasureName = measureNamePrefix.toString() + performanceValueName.toString();
 
                 rCommandMeasure.append("perf.svm <- performance(pred.svm, '");

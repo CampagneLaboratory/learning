@@ -304,7 +304,8 @@ public class TestCrossValidation {
         measuresToTest.add(javaMeasureName);
 
         measuresToTest.add(RocrMeasureName);
-        compareJavaImplementationToRocr(measuresToTest, javaMeasureName, RocrMeasureName);
+        EvaluationMeasure measure = compareJavaImplementationToRocr(measuresToTest, javaMeasureName, RocrMeasureName);
+        assertEquals(measure.getAccuracy() / 100d, measure.getPerformanceValueAverage("Accuracy-zero"), 0.1);
     }
 
 
@@ -316,7 +317,9 @@ public class TestCrossValidation {
         measuresToTest.add(javaMeasureName);
 
         measuresToTest.add(RocrMeasureName);
-        compareJavaImplementationToRocr(measuresToTest, javaMeasureName, RocrMeasureName);
+        EvaluationMeasure measure = compareJavaImplementationToRocr(measuresToTest, javaMeasureName, RocrMeasureName);
+   //     assertEquals(measure.getSensitivity() / 100d, measure.getPerformanceValueAverage("Sensitivity-zero"), 0.1);
+
     }
 
     @Test
@@ -327,10 +330,11 @@ public class TestCrossValidation {
         measuresToTest.add(javaMeasureName);
 
         measuresToTest.add(RocrMeasureName);
-        compareJavaImplementationToRocr(measuresToTest, javaMeasureName, RocrMeasureName);
+        EvaluationMeasure measure = compareJavaImplementationToRocr(measuresToTest, javaMeasureName, RocrMeasureName);
+      //  assertEquals(measure.getSpecificity() / 100d, measure.getPerformanceValueAverage("Specificity-zero"), 0.1);
     }
 
-    private void compareJavaImplementationToRocr(ObjectSet<CharSequence> measuresToTest, String javaMeasureName, String rocrMeasureName) {
+    private EvaluationMeasure compareJavaImplementationToRocr(ObjectSet<CharSequence> measuresToTest, String javaMeasureName, String rocrMeasureName) {
         final int numRepeats = 50;
         final ObjectList<double[]> decisionsList = new ObjectArrayList<double[]>();
         final ObjectList<double[]> trueLabelsList = new ObjectArrayList<double[]>();
@@ -345,8 +349,9 @@ public class TestCrossValidation {
                 trueLabelsList,
                 measuresToTest, true);
 
-        assertEquals(measure.getPerformanceValueAverage(javaMeasureName), measure.getPerformanceValueAverage(javaMeasureName), 0.1);
-        assertEquals(measure.getPerformanceValueStd(rocrMeasureName), measure.getPerformanceValueStd(rocrMeasureName), 0.1);
+        assertEquals(measure.getPerformanceValueAverage(rocrMeasureName), measure.getPerformanceValueAverage(javaMeasureName), 0.1);
+        assertEquals(measure.getPerformanceValueStd(rocrMeasureName), measure.getPerformanceValueStd(javaMeasureName), 0.1);
+        return measure;
     }
 
     @Test
