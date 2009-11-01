@@ -21,10 +21,7 @@ package edu.cornell.med.icb.learning;
 import cern.jet.random.engine.RandomEngine;
 import edu.cornell.med.icb.R.RConnectionPool;
 import edu.cornell.med.icb.learning.tools.svmlight.EvaluationMeasure;
-import edu.cornell.med.icb.stat.MatthewsCorrelationCalculator;
-import edu.cornell.med.icb.stat.AreaUnderTheRocCurveCalculator;
-import edu.cornell.med.icb.stat.PredictionStatisticCalculator;
-import edu.cornell.med.icb.stat.RootMeanSquaredErrorCalculator;
+import edu.cornell.med.icb.stat.*;
 import edu.cornell.med.icb.util.RandomAdapter;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleArraySet;
@@ -99,7 +96,6 @@ public class CrossValidation {
         this.classifier = classifier;
         this.problem = problem;
         this.randomAdapter = new RandomAdapter(randomEngine);
-        evaluateMeasure("auc");
         this.useRServer(true);
     }
 
@@ -392,6 +388,9 @@ public class CrossValidation {
         measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, measureNameSuffix, new MatthewsCorrelationCalculator());
         measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, measureNameSuffix, new AreaUnderTheRocCurveCalculator());
         measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, measureNameSuffix, new RootMeanSquaredErrorCalculator());
+        measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, measureNameSuffix, new AccuracyCalculator());
+        measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, measureNameSuffix, new SensitivityCalculator());
+        measureNames = evaluatePerformanceMeasure(decisionValues, labels, measureNames, measure, measureNameSuffix, new SpecificityCalculator());
         if (measureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
                 evaluateWithROCR(decisionValues, labels, measureNames, measure, measureNameSuffix);
@@ -399,42 +398,16 @@ public class CrossValidation {
         }
     }
 
-    private static ObjectSet<CharSequence> evaluateSensitivityAndSpecificity(final double[] decisionValues, final double[] labels, final ObjectSet<CharSequence> measureNames, final EvaluationMeasure measure) {
-        if (measureNames.contains("sens") || measureNames.contains("spec")) {
-            final ContingencyTable ctable = new ContingencyTable();
-            int index = 0;
-            for (final double decision : decisionValues) {
-                ctable.observeDecision(labels[index], decision >= 0 ? 1 : -1);
-                index++;
-            }
-            ctable.average();
-            if (measureNames.contains("sens")) {
-                measure.addValue("sens", ctable.getSensitivity());
-            }
-            if (measureNames.contains("spec")) {
-                measure.addValue("spec", ctable.getSpecificity());
-            }
-
-            final ObjectSet<CharSequence> measureNamesFiltered = new ObjectArraySet<CharSequence>();
-            measureNamesFiltered.addAll(measureNames);
-            if (measureNames.contains("sens")) {
-                measureNamesFiltered.remove("sens");
-            }
-            if (measureNames.contains("spec")) {
-                measureNamesFiltered.remove("spec");
-            }
-            return measureNamesFiltered;
-        } else {
-            return measureNames;
-        }
-    }
-
     public static void evaluate(final ObjectList<double[]> decisionList, final ObjectList<double[]> trueLabelList,
                                 ObjectSet<CharSequence> evaluationMeasureNames, final EvaluationMeasure measure,
                                 final CharSequence measureNamePrefix, final boolean useRServer) {
         evaluationMeasureNames = evaluateMCC(decisionList, trueLabelList, evaluationMeasureNames, measure);
-        //evaluationMeasureNames = evaluatePerformanceMeasure(decisionList, trueLabelList, evaluationMeasureNames, measure, new MatthewsCorrelationCalculator());
+        evaluationMeasureNames = evaluatePerformanceMeasure(decisionList, trueLabelList, evaluationMeasureNames, measure, new MatthewsCorrelationCalculator());
         evaluationMeasureNames = evaluatePerformanceMeasure(decisionList, trueLabelList, evaluationMeasureNames, measure, new AreaUnderTheRocCurveCalculator());
+        evaluationMeasureNames = evaluatePerformanceMeasure(decisionList, trueLabelList, evaluationMeasureNames, measure, new AccuracyCalculator());
+        evaluationMeasureNames = evaluatePerformanceMeasure(decisionList, trueLabelList, evaluationMeasureNames, measure, new SensitivityCalculator());
+        evaluationMeasureNames = evaluatePerformanceMeasure(decisionList, trueLabelList, evaluationMeasureNames, measure, new SpecificityCalculator());
+
         if (evaluationMeasureNames.size() > 0) { // more measures to evaluate, send to ROCR
             if (useRServer) {
                 for (int i = 0; i < decisionList.size(); i++) {
@@ -575,6 +548,7 @@ public class CrossValidation {
                  charSequenceObjectIterator.hasNext();) {
                 final StringBuilder rCommandMeasure = new StringBuilder();
                 performanceValueName = charSequenceObjectIterator.next();
+                if (performanceValueName==null) continue;
                 final CharSequence storedPerformanceMeasureName = measureNamePrefix.toString() + performanceValueName.toString();
 
                 rCommandMeasure.append("perf.svm <- performance(pred.svm, '");
