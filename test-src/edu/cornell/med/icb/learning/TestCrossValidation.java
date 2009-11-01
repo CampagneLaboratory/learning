@@ -349,8 +349,8 @@ public class TestCrossValidation {
                 trueLabelsList,
                 measuresToTest, true);
 
-        assertEquals(measure.getPerformanceValueAverage(rocrMeasureName), measure.getPerformanceValueAverage(javaMeasureName), 0.1);
-        assertEquals(measure.getPerformanceValueStd(rocrMeasureName), measure.getPerformanceValueStd(javaMeasureName), 0.1);
+        assertEquals(measure.getPerformanceValueAverage(rocrMeasureName), measure.getPerformanceValueAverage(javaMeasureName+"-zero"), 0.1);
+        assertEquals(measure.getPerformanceValueStd(rocrMeasureName), measure.getPerformanceValueStd(javaMeasureName+"-zero"), 0.1);
         return measure;
     }
 
