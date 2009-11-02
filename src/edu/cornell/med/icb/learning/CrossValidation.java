@@ -452,7 +452,7 @@ public class CrossValidation {
             for (int i = 0; i < decisionValueList.size(); i++) {
                 final double statistic = calculator.evaluateStatisticAtThreshold(optimalThreshold, decisionValueList.get(i), trueLabelList.get(i));
                 measure.addValue(measureName, statistic);
-                measure.addValue(measureName + "-zero", calculator.evaluateStatisticAtThreshold(0, decisionValueList, trueLabelList));
+                measure.addValue(measureName + "-zero", calculator.evaluateStatisticAtThreshold(0, decisionValueList.get(i), trueLabelList.get(i)));
 
             }
 

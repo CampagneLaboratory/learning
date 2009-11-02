@@ -289,7 +289,7 @@ public class TestCrossValidation {
     public void testMCCSplits() {
         final ObjectSet<CharSequence> measuresToTest = new ObjectArraySet<CharSequence>();
         final String javaMeasureName = "MCC";
-        final String RocrMeasureName = "mcc";
+        final String RocrMeasureName = "mat";
         measuresToTest.add(javaMeasureName);
 
         measuresToTest.add(RocrMeasureName);
