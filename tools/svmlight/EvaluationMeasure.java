@@ -24,6 +24,7 @@ import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 import it.unimi.dsi.lang.MutableString;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
@@ -178,7 +179,7 @@ public class EvaluationMeasure {
         double sum = 0;
         final DoubleList values = name2Values.get(measureName.intern());
         if (values == null) {
-           
+
             return Double.NaN;
         }
         for (final double value : values) {
@@ -375,5 +376,13 @@ public class EvaluationMeasure {
         this.ctable.setTP(ctable.getTP());
         this.ctable.setTN(ctable.getTN());
 
+    }
+
+    /**
+     * Return the name pf performance measures stored in this array.
+     */
+    public CharSequence[] getMeasureNames() {
+        final ObjectSet<String> keys = name2Values.keySet();
+        return keys.toArray(new String[keys.size()]);
     }
 }
