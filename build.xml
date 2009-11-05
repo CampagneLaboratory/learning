@@ -61,6 +61,17 @@
                  header="icb-learning API ${label} (${buildstamp})">
             <link href="http://java.sun.com/j2se/1.5/docs/api/"/>
             <link href="http://fastutil.dsi.unimi.it/docs/"/>
+            <link href="http://dsiutils.dsi.unimi.it/docs/"/>
+            <link href="http://jakarta.apache.org/commons/cli/api-release/"/>
+            <link href="http://jakarta.apache.org/commons/collections/api-release/"/>
+            <link href="http://jakarta.apache.org/commons/configuration/apidocs/"/>
+            <link href="http://jakarta.apache.org/commons/io/apidocs/"/>
+            <link href="http://jakarta.apache.org/commons/logging/apidocs/"/>
+            <link href="http://dsd.lbl.gov/~hoschek/colt/api/"/>
+            <link href="http://junit.sourceforge.net/javadoc_40/"/>
+            <link href="http://icbtools.med.cornell.edu/javadocs/qtclustering/"/>
+            <link href="http://icbtools.med.cornell.edu/javadocs/icb-utils/"/>
+
             <classpath>
                 <path refid="compile.classpath"/>
                 <pathelement location="${classes}"/>
@@ -75,7 +86,6 @@
         <delete file="${jarfile}"/>
     </target>
 
-    <target name="cruisecontrol" depends="clean, cobertura-setup, findbugs,
-                  test, jar, javadocs, pmd, cpd, checkstyle, cobertura-report"
+    <target name="cruisecontrol" depends="clean, findbugs, test, jar, javadocs, pmd, cpd, checkstyle"
             description="Run CruiseControl Build and Tests"/>
 </project>
