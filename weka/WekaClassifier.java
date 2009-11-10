@@ -31,22 +31,20 @@ import weka.core.Instances;
  * @author Fabien Campagne Date: Nov 23, 2007 Time: 1:25:19 PM
  */
 public class WekaClassifier implements Classifier {
-
     private weka.classifiers.Classifier delegate;
     private WekaParameters defaultParameters;
     private static final Log LOG = LogFactory.getLog(WekaClassifier.class);
-    private final double[] labelIndex2LabelValue = {-1d, 1d};
+    private final double[] labelIndex2LabelValue = {-1.0d, 1.0d};
 
-    public WekaClassifier(
-            final weka.classifiers.Classifier delegate) {
+    public WekaClassifier(final weka.classifiers.Classifier delegate) {
         super();
         this.delegate = delegate;
-        this.defaultParameters = new WekaParameters();
+        defaultParameters = new WekaParameters();
     }
 
     public void setParameters(final ClassificationParameters parameters) {
         assert parameters instanceof WekaParameters : "parameters must be Weka parameters.";
-        this.defaultParameters = (WekaParameters) parameters;
+        defaultParameters = (WekaParameters) parameters;
     }
 
     public WekaClassifier() {
@@ -58,9 +56,10 @@ public class WekaClassifier implements Classifier {
         return new WekaProblem();
     }
 
-    public ClassificationModel train(final ClassificationProblem problem, final ClassificationParameters parameters) {
+    public ClassificationModel train(final ClassificationProblem problem,
+                                     final ClassificationParameters parameters) {
         defaultParameters = getWekaParameters(parameters);
-        instanciateClassifier();
+        instantiateClassifier();
         try {
             delegate.setOptions(defaultParameters.getNative());
             // System.out.println("weka Problem: "+getWekaProblem(problem));
@@ -72,13 +71,12 @@ public class WekaClassifier implements Classifier {
         }
     }
 
-    private void instanciateClassifier() {
+    private void instantiateClassifier() {
         final String wekaClassifierClassName = defaultParameters.getWekaClassifierClassName();
 
         if (delegate == null) {
             try {
                 final Class clazz = Class.forName(wekaClassifierClassName);
-
                 final Object newInstance = clazz.newInstance();
                 assert newInstance instanceof weka.classifiers.Classifier : "weka classifier must implement weka.classifiers.Classifier";
                 delegate = (weka.classifiers.Classifier) newInstance;
@@ -89,7 +87,6 @@ public class WekaClassifier implements Classifier {
             } catch (InstantiationException e) {
                 LOG.error(e);
             }
-
         }
         assert delegate != null : "Could not instance weka classifier for class name=" + wekaClassifierClassName;
     }
@@ -100,14 +97,14 @@ public class WekaClassifier implements Classifier {
 
     private WekaParameters getWekaParameters(final ClassificationParameters parameters) {
         assert parameters instanceof WekaParameters : "parameters must be weka parameters.";
-        return ((WekaParameters) parameters);
+        return (WekaParameters) parameters;
     }
 
-    public double predict(final ClassificationModel trainingModel, final ClassificationProblem problem,
-                          final int instanceIndex) {
+    public double predict(final ClassificationModel trainingModel,
+                          final ClassificationProblem problem, final int instanceIndex) {
         assert trainingModel instanceof WekaModel : "Model must be a weka model.";
         try {
-            return labelIndex2LabelValue[(int) getWekaClassifier(this, trainingModel)
+            return labelIndex2LabelValue[(int) getWekaClassifier(this)
                     .classifyInstance(getWekaProblem(problem).instance(instanceIndex))];
         } catch (Exception e) {
             LOG.error("Weka classifier has thrown exception.", e);
@@ -115,36 +112,44 @@ public class WekaClassifier implements Classifier {
         }
     }
 
-    public double predict(final ClassificationModel trainingModel, final ClassificationProblem problem,
-                          final int instanceIndex, final double[] probabilities) {
+    public double predict(final ClassificationModel trainingModel,
+                          final ClassificationProblem problem, final int instanceIndex,
+                          final double[] probabilities) {
         assert trainingModel instanceof WekaModel : "Model must be a weka model.";
+        final double[] probs;
         try {
-            final double[] probs
-                    = getWekaClassifier(this, trainingModel)
+            probs = getWekaClassifier(this)
                     .distributionForInstance(getWekaProblem(problem).instance(instanceIndex));
-
-            System.arraycopy(probs, 0, probabilities, 0, probs.length);
-
-            double maxProb = Double.NEGATIVE_INFINITY;
-            int maxIndex = -1;
-            for (int labelIndex = 0; labelIndex < probabilities.length; labelIndex++) {
-                if (probabilities[labelIndex] > maxProb) {
-                    maxProb = probabilities[labelIndex];
-                    maxIndex = labelIndex;
-                }
-            }
-            final double decision= labelIndex2LabelValue[maxIndex];
-             if (LOG.isDebugEnabled()) {
-                LOG.debug("decision values: " + ArrayUtils.toString(probabilities));
-            }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("decision: " + decision);
-            }
-            return decision;
         } catch (Exception e) {
             LOG.error("Weka classifier has thrown exception.", e);
             return Double.NaN;
         }
+
+        System.arraycopy(probs, 0, probabilities, 0, probs.length);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("decision values: " + ArrayUtils.toString(probabilities));
+        }
+
+        double maxProb = Double.NEGATIVE_INFINITY;
+        int maxIndex = -1;
+        for (int labelIndex = 0; labelIndex < probabilities.length; labelIndex++) {
+            if (probabilities[labelIndex] > maxProb) {
+                maxProb = probabilities[labelIndex];
+                maxIndex = labelIndex;
+            }
+        }
+
+        final double decision;
+        if (maxIndex == -1) {
+            decision = Double.NaN;
+        } else {
+            decision = labelIndex2LabelValue[maxIndex];
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("decision: " + decision);
+        }
+
+        return decision;
     }
 
     public ClassificationParameters getParameters() {
@@ -152,7 +157,7 @@ public class WekaClassifier implements Classifier {
     }
 
     public String getShortName() {
-        instanciateClassifier();
+        instantiateClassifier();
         return "weka!" + delegate.getClass().getName();
     }
 
@@ -161,8 +166,8 @@ public class WekaClassifier implements Classifier {
         return ((WekaProblem) problem).getNative();
     }
 
-    private weka.classifiers.Classifier getWekaClassifier(final WekaClassifier wekaClassifier,
-                                                          final ClassificationModel trainingModel) {
+    private weka.classifiers.Classifier getWekaClassifier(final WekaClassifier wekaClassifier
+    ) {
         return wekaClassifier.delegate;
     }
 
