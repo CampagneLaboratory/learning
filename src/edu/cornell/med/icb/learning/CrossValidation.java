@@ -21,7 +21,13 @@ package edu.cornell.med.icb.learning;
 import cern.jet.random.engine.RandomEngine;
 import edu.cornell.med.icb.R.RConnectionPool;
 import edu.cornell.med.icb.learning.tools.svmlight.EvaluationMeasure;
-import edu.cornell.med.icb.stat.*;
+import edu.cornell.med.icb.stat.AccuracyCalculator;
+import edu.cornell.med.icb.stat.AreaUnderTheRocCurveCalculator;
+import edu.cornell.med.icb.stat.MatthewsCorrelationCalculator;
+import edu.cornell.med.icb.stat.PredictionStatisticCalculator;
+import edu.cornell.med.icb.stat.RootMeanSquaredErrorCalculator;
+import edu.cornell.med.icb.stat.SensitivityCalculator;
+import edu.cornell.med.icb.stat.SpecificityCalculator;
 import edu.cornell.med.icb.util.RandomAdapter;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleArraySet;
@@ -443,7 +449,7 @@ public class CrossValidation {
                                                                       final ObjectSet<CharSequence> evaluationMeasureNames,
                                                                       final EvaluationMeasure measure,
                                                                       final PredictionStatisticCalculator calculator) {
-        String measureName = calculator.getMeasureName();
+        final String measureName = calculator.getMeasureName();
         if (evaluationMeasureNames.contains(measureName)) {
 
             // find optimal threshold across all splits:
@@ -469,12 +475,12 @@ public class CrossValidation {
                                                                       final double[] trueLabelList,
                                                                       final ObjectSet<CharSequence> evaluationMeasureNames,
                                                                       final EvaluationMeasure measure,
-                                                                      CharSequence measureNameSuffix, final PredictionStatisticCalculator calculator) {
+                                                                      final CharSequence measureNameSuffix, final PredictionStatisticCalculator calculator) {
         final String measureName = calculator.getMeasureName();
         if (evaluationMeasureNames.contains(measureName)) {
 
             // find optimal threshold across all splits:
-            double statistic = calculator.thresholdIndependentStatistic(decisionValueList, trueLabelList);
+            final double statistic = calculator.thresholdIndependentStatistic(decisionValueList, trueLabelList);
             measure.addValue(measureName + measureNameSuffix, statistic);
 
             measure.addValue(measureName + "-zero", calculator.evaluateStatisticAtThreshold(0, decisionValueList, trueLabelList));
@@ -549,7 +555,9 @@ public class CrossValidation {
                  charSequenceObjectIterator.hasNext();) {
                 final StringBuilder rCommandMeasure = new StringBuilder();
                 performanceValueName = charSequenceObjectIterator.next();
-                if (performanceValueName == null) continue;
+                if (performanceValueName == null) {
+                    continue;
+                }
                 final CharSequence storedPerformanceMeasureName = measureNamePrefix.toString() + performanceValueName.toString();
 
                 rCommandMeasure.append("perf.svm <- performance(pred.svm, '");
@@ -825,7 +833,7 @@ public class CrossValidation {
 
         measure.setContingencyTable(ctable);
 
-        // The below line was previousl commented out? KCD 2008-09-29
+        // The below line was previously commented out? KCD 2008-09-29
         measure.setRocAucValues(aucValues);
 
         measure.setF1Values(f1Values);
@@ -837,7 +845,7 @@ public class CrossValidation {
         try {
             scaler = featureScalerClass.newInstance();
         } catch (InstantiationException e) {
-            LOG.error("Cannot instanciate feature scaler", e);
+            LOG.error("Cannot instantiate feature scaler", e);
         } catch (IllegalAccessException e) {
             LOG.error("Cannot create feature scaler", e);
         }
