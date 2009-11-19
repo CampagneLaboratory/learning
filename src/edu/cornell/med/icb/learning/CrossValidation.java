@@ -582,9 +582,6 @@ public class CrossValidation {
                     // find the index of x.value which indicates a threshold more or equal to zero (for the decision value)
                     int thresholdGEZero = -1;
                     for (int index = thresholds.length - 1; index >= 0; index--) {
-                        if (values[index] != values[index]) {
-                            continue;
-                        }
                         if (thresholds[index] >= 0) {
                             thresholdGEZero = index;
                             break;

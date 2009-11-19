@@ -29,15 +29,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import org.junit.Test;
 
-
 /**
- * Describe class here.
+ * Validate functionality of {@link edu.cornell.med.icb.learning.CrossValidation} methods.
  *
  * @author Kevin Dorff
  */
 public class TestCrossValidation {
-
-
     /**
      * Test roc short circuit.
      * label = 1, decisions positive
@@ -221,18 +218,16 @@ public class TestCrossValidation {
         final EvaluationMeasure measure = CrossValidation.testSetEvaluation(new double[]{-1, 1, 1, 1, 1},
                 new double[]{0, 1, 1, 1, 1},
                 measuresToTest, true);
-        assertEquals(0d, measure.getPerformanceValueAverage("fpr"), 0.01);
-        assertEquals(1d, measure.getPerformanceValueAverage("tpr"), 0.01);
-        assertEquals(0d, measure.getPerformanceValueAverage("fnr"), 0.01);
-        assertEquals(1d, measure.getPerformanceValueAverage("acc"), 0.01);
-        assertEquals(1d, measure.getPerformanceValueAverage("prec"), 0.01);
-        assertEquals(1d, measure.getPerformanceValueAverage("rec"), 0.01);
-        assertEquals(1d, measure.getPerformanceValueAverage("mat"), 0.01);
-        assertEquals(1d, measure.getPerformanceValueAverage("MCC"), 0.01);
-        assertEquals(1d, measure.getPerformanceValueAverage("auc"), 0.01);
-
+        assertEquals(0.0d, measure.getPerformanceValueAverage("fpr"), 0.01);
+        assertEquals(1.0d, measure.getPerformanceValueAverage("tpr"), 0.01);
+        assertEquals(0.0d, measure.getPerformanceValueAverage("fnr"), 0.01);
+        assertEquals(1.0d, measure.getPerformanceValueAverage("acc"), 0.01);
+        assertEquals(1.0d, measure.getPerformanceValueAverage("prec"), 0.01);
+        assertEquals(1.0d, measure.getPerformanceValueAverage("rec"), 0.01);
+        assertEquals(1.0d, measure.getPerformanceValueAverage("mat"), 0.01);
+        assertEquals(1.0d, measure.getPerformanceValueAverage("MCC"), 0.01);
+        assertEquals(1.0d, measure.getPerformanceValueAverage("auc"), 0.01);
     }
-
 
     @Test
     public void testROCR2() {
@@ -246,95 +241,90 @@ public class TestCrossValidation {
         measuresToTest.add("mat");
         measuresToTest.add("MCC");
         measuresToTest.add("auc");
-        final EvaluationMeasure measure = CrossValidation.testSetEvaluation(new double[]{-1.9, -1.2, -1, 1.1, .3, .6, -.1},
+        final EvaluationMeasure measure = CrossValidation.testSetEvaluation(new double[]{-1.9, -1.2, -1, 1.1, 0.3, 0.6, -0.1},
                 new double[]{0, 1, 0, 1, 1, 1, 0},
                 measuresToTest, true);
-        assertEquals(0d, measure.getPerformanceValueAverage("fpr"), 0.01);
+        assertEquals(0.0d, measure.getPerformanceValueAverage("fpr"), 0.01);
         assertEquals(0.75d, measure.getPerformanceValueAverage("tpr"), 0.01);
         assertEquals(0.25d, measure.getPerformanceValueAverage("fnr"), 0.01);
-        assertEquals(6d / 7d, measure.getPerformanceValueAverage("acc"), 0.01);
-        assertEquals(1d, measure.getPerformanceValueAverage("prec"), 0.01);
+        assertEquals(6.0d / 7.0d, measure.getPerformanceValueAverage("acc"), 0.01);
+        assertEquals(1.0d, measure.getPerformanceValueAverage("prec"), 0.01);
         assertEquals(0.75d, measure.getPerformanceValueAverage("rec"), 0.01);
         assertEquals(0.75d, measure.getPerformanceValueAverage("mat"), 0.01);
         assertEquals(0.75d, measure.getPerformanceValueAverage("MCC"), 0.01);
         assertEquals(0.83d, measure.getPerformanceValueAverage("auc"), 0.01);
-
     }
 
     @Test
     public void testROCR3() {
         final ObjectSet<CharSequence> measuresToTest = new ObjectArraySet<CharSequence>();
         measuresToTest.add("MCC");
-        final EvaluationMeasure measure = CrossValidation.testSetEvaluation(new double[]{-1.9, -1.2, -1, 1.1, .3, .6, -.1},
+        final EvaluationMeasure measure = CrossValidation.testSetEvaluation(new double[]{-1.9, -1.2, -1, 1.1, 0.3, 0.6, -0.1},
                 new double[]{0, 1, 0, 1, 1, 1, 0},
                 measuresToTest, true);
 
         assertEquals(0.75d, measure.getPerformanceValueAverage("MCC"), 0.01);
-
     }
-
 
     @Test
     public void testAUCSplits() {
         final ObjectSet<CharSequence> measuresToTest = new ObjectArraySet<CharSequence>();
         final String javaMeasureName = "AUC";
-        final String RocrMeasureName = "auc";
+        final String rocrMeasureName = "auc";
         measuresToTest.add(javaMeasureName);
 
-        measuresToTest.add(RocrMeasureName);
-        compareJavaImplementationToRocr(measuresToTest, javaMeasureName, RocrMeasureName);
+        measuresToTest.add(rocrMeasureName);
+        compareJavaImplementationToRocr(measuresToTest, javaMeasureName, rocrMeasureName);
     }
 
     @Test
     public void testMCCSplits() {
         final ObjectSet<CharSequence> measuresToTest = new ObjectArraySet<CharSequence>();
         final String javaMeasureName = "MCC";
-        final String RocrMeasureName = "mat";
+        final String rocrMeasureName = "mat";
         measuresToTest.add(javaMeasureName);
 
-        measuresToTest.add(RocrMeasureName);
-        compareJavaImplementationToRocr(measuresToTest, javaMeasureName, RocrMeasureName);
+        measuresToTest.add(rocrMeasureName);
+        compareJavaImplementationToRocr(measuresToTest, javaMeasureName, rocrMeasureName);
     }
 
     @Test
     public void testAccuracyManySplits() {
         final ObjectSet<CharSequence> measuresToTest = new ObjectArraySet<CharSequence>();
         final String javaMeasureName = "Accuracy";
-        final String RocrMeasureName = "acc";
+        final String rocrMeasureName = "acc";
         measuresToTest.add(javaMeasureName);
 
-        measuresToTest.add(RocrMeasureName);
-        EvaluationMeasure measure = compareJavaImplementationToRocr(measuresToTest, javaMeasureName, RocrMeasureName);
-        assertEquals(measure.getAccuracy() / 100d, measure.getPerformanceValueAverage("Accuracy-zero"), 0.1);
+        measuresToTest.add(rocrMeasureName);
+        final EvaluationMeasure measure = compareJavaImplementationToRocr(measuresToTest, javaMeasureName, rocrMeasureName);
+        assertEquals(measure.getAccuracy() / 100.0d, measure.getPerformanceValueAverage("Accuracy-zero"), 0.1);
     }
-
 
     @Test
     public void testSensitivityManySplits() {
         final ObjectSet<CharSequence> measuresToTest = new ObjectArraySet<CharSequence>();
         final String javaMeasureName = "Sensitivity";
-        final String RocrMeasureName = "sens";
+        final String rocrMeasureName = "sens";
         measuresToTest.add(javaMeasureName);
 
-        measuresToTest.add(RocrMeasureName);
-        EvaluationMeasure measure = compareJavaImplementationToRocr(measuresToTest, javaMeasureName, RocrMeasureName);
+        measuresToTest.add(rocrMeasureName);
+        final EvaluationMeasure measure = compareJavaImplementationToRocr(measuresToTest, javaMeasureName, rocrMeasureName);
    //     assertEquals(measure.getSensitivity() / 100d, measure.getPerformanceValueAverage("Sensitivity-zero"), 0.1);
-
     }
 
     @Test
     public void testSpecificityManySplits() {
         final ObjectSet<CharSequence> measuresToTest = new ObjectArraySet<CharSequence>();
         final String javaMeasureName = "Specificity";
-        final String RocrMeasureName = "spec";
+        final String rocrMeasureName = "spec";
         measuresToTest.add(javaMeasureName);
 
-        measuresToTest.add(RocrMeasureName);
-        EvaluationMeasure measure = compareJavaImplementationToRocr(measuresToTest, javaMeasureName, RocrMeasureName);
+        measuresToTest.add(rocrMeasureName);
+        final EvaluationMeasure measure = compareJavaImplementationToRocr(measuresToTest, javaMeasureName, rocrMeasureName);
       //  assertEquals(measure.getSpecificity() / 100d, measure.getPerformanceValueAverage("Specificity-zero"), 0.1);
     }
 
-    private EvaluationMeasure compareJavaImplementationToRocr(ObjectSet<CharSequence> measuresToTest, String javaMeasureName, String rocrMeasureName) {
+    private EvaluationMeasure compareJavaImplementationToRocr(final ObjectSet<CharSequence> measuresToTest, final String javaMeasureName, final String rocrMeasureName) {
         final int numRepeats = 50;
         final ObjectList<double[]> decisionsList = new ObjectArrayList<double[]>();
         final ObjectList<double[]> trueLabelsList = new ObjectArrayList<double[]>();
@@ -365,8 +355,8 @@ public class TestCrossValidation {
         final EvaluationMeasure measure = CrossValidation.testSetEvaluation(decisions, trueLabels,
                 measuresToTest, true);
 
-        assertEquals(measure.getPerformanceValueAverage("mat"), measure.getPerformanceValueAverage("MCC"), 0.1);
-        assertEquals(measure.getPerformanceValueStd("mat"), measure.getPerformanceValueStd("MCC"), 0.1);
+        assertEquals(measure.getPerformanceValueAverage("mat"), measure.getPerformanceValueAverage("MCC-zero"), 0.1);
+        assertEquals(measure.getPerformanceValueStd("mat"), measure.getPerformanceValueStd("MCC-zero"), 0.1);
     }
 
 
@@ -378,7 +368,7 @@ public class TestCrossValidation {
         return labels;
     }
 
-    RandomEngine randomEngine = new MersenneTwister();
+    final RandomEngine randomEngine = new MersenneTwister();
 
     private double[] generateRandomDecisions(final int dimension) {
         final double[] decisions = new double[dimension];
