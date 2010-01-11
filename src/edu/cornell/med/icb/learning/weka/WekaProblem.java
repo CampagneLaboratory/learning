@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2009 Institute for Computational Biomedicine,
+ * Copyright (C) 2007-2010 Institute for Computational Biomedicine,
  *                         Weill Medical College of Cornell University
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -179,7 +179,7 @@ public class WekaProblem implements ClassificationProblem {
                 scaler.observeFeatureForTraining(numFeatures, featureValues(featureIndex, testSetIndices), featureIndex);
             }
         }
-     
+
         return new WekaProblem(this, testSetIndices, scaler);
     }
 
@@ -208,9 +208,9 @@ public class WekaProblem implements ClassificationProblem {
     public double[] getFeatures(final int instance2Index) {
         final DoubleList values = new DoubleArrayList();
         for (int attributeIndex = 1; attributeIndex < dataset.numAttributes(); attributeIndex++) {
-   
+
             values.add(dataset.instance(instance2Index).value(attributeIndex));
-        }     
+        }
 
         return values.toDoubleArray();
     }

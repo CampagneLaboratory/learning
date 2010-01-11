@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2009 Institute for Computational Biomedicine,
+ * Copyright (C) 2007-2010 Institute for Computational Biomedicine,
  *                         Weill Medical College of Cornell University
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -57,7 +57,7 @@ public void setParameter(final String parameterName) {
             } else {
                 // value is NaN, parameter of the form -a=b.
                 // submit a and b as consecutive elements in options:
-                String[] tokens = parameterName.split("[=]");
+                final String[] tokens = parameterName.split("[=]");
                 if (tokens.length == 2) {
                     options.add(tokens[0]);
                     options.add(tokens[1]);
