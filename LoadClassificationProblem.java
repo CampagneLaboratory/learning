@@ -24,11 +24,7 @@ import edu.mssm.crover.tables.Table;
 import edu.mssm.crover.tables.TypeMismatchException;
 
 import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A class to construct a classification problem from features/labels in a table.
@@ -40,13 +36,19 @@ public class LoadClassificationProblem {
 
     protected int recodeLabel(final Object value) throws InvalidColumnException {
         if (value instanceof String) {
-            final String labelValue = (String) value;
+            final String labelValue = ((String) value).intern();
             for (final Set<String> labelGroup : labelValueGroups) {
+
                 if (labelGroup.contains(labelValue)) {
                     return groupToCodedLabel.get(labelGroup);
                 }
             }
+            System.out.println(labelValueGroups);
+            for (final Set<String> labelGroup : labelValueGroups) {
+                System.out.println("labels were.. " + labelGroup);
+            }
             assert false : "Label value " + labelValue + " must match a label group.";
+
             return 0;
         } else {
             throw new InvalidColumnException("Label must be encoded with a String type.");
@@ -79,7 +81,6 @@ public class LoadClassificationProblem {
         groupToCodedLabel = new HashMap<Set<String>, Integer>();
         if (labelValueGroups.size() == 2) {
             //: "Classification requires exactly two label groups.";
-
 
             final Iterator<Set<String>> it = labelValueGroups.iterator();
             final Set<String> labelGroup0 = it.next();  // negative class
