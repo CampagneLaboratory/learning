@@ -21,10 +21,9 @@ package edu.cornell.med.icb.learning.libsvm;
 import edu.cornell.med.icb.learning.ClassificationModel;
 import libsvm.svm;
 import libsvm.svm_model;
+import org.apache.commons.io.IOUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 /**
  * @author Fabien Campagne Date: Nov 20, 2007 Time: 5:35:52 PM
@@ -39,7 +38,7 @@ public class LibSvmModel extends ClassificationModel {
 
     public LibSvmModel(final InputStream stream) throws IOException {
         super();
-        nativeModel = svm.svm_load_model(stream);
+        nativeModel = svm.svm_load_model(new BufferedReader(new InputStreamReader(stream)));
     }
 
     public LibSvmModel(final String modelFilename) throws IOException {
@@ -54,7 +53,12 @@ public class LibSvmModel extends ClassificationModel {
 
     @Override
     public void write(final OutputStream stream) throws IOException {
-         svm.svm_save_model(stream, nativeModel);
+    // write to a temporary file, then copy content to the output stream:
+        File tmp=File.createTempFile("libsvm-model","vsm");
+        svm.svm_save_model(tmp.getAbsolutePath(), nativeModel);
+        IOUtils.copy(new FileInputStream(tmp), stream);
+        IOUtils.closeQuietly(stream);
+        tmp.delete();
     }
 
     public svm_model getNativeModel() {

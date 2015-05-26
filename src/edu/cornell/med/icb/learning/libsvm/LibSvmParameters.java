@@ -100,7 +100,7 @@ public class LibSvmParameters extends ClassificationParameters {
         } else if (parameterName.equals("coef0")) { // polynomial coefficient
             nativeParameters.coef0 = value;
         } else if (parameterName.equals("degree")) { // polynomial degree
-            nativeParameters.degree = value;
+            nativeParameters.degree =(int) value;
         } else if (parameterName.equals("cache_size")) {
             nativeParameters.cache_size = value;
         } else if (parameterName.equals("shrinking=true")) { // shrinking on
