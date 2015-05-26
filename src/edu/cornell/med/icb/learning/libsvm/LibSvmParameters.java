@@ -118,7 +118,7 @@ public class LibSvmParameters extends ClassificationParameters {
         } else if (parameterName.equals("machine=EPSILON_SVR")) {
             nativeParameters.svm_type = svm_parameter.EPSILON_SVR;
         } else if (parameterName.equals("machine=ONE_CLASS")) {
-            nativeParameters.svm_type = svm_parameter.EPSILON_SVR;
+            nativeParameters.svm_type = svm_parameter.ONE_CLASS;
         } else if (parameterName.equals("machine=nuSVC")) {
             nativeParameters.svm_type = svm_parameter.NU_SVC;
         } else if (parameterName.equals("machine=nuSVR")) {

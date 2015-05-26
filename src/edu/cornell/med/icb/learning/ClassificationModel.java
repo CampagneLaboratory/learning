@@ -45,6 +45,11 @@ public abstract class ClassificationModel {
     private static final Log LOG = LogFactory.getLog(ClassificationModel.class);
 
     /**
+     * Return true for regression models.
+     * @return
+     */
+    public abstract boolean isRegression();
+    /**
      * Write the model to a file.
      *
      * @param filename Filename where to store the model.
@@ -120,6 +125,7 @@ public abstract class ClassificationModel {
             helper.model = new LibSvmModel(stream);
             helper.classifier = new LibSvmClassifier();
             helper.parameters = new LibSvmParameters();
+
         } else if (parameters.contains("wekaClass")) {
             try {
                 helper.classifier = new WekaClassifier((weka.classifiers.Classifier) BinIO.loadObject(stream));

@@ -22,10 +22,7 @@ import edu.cornell.med.icb.learning.ClassificationModel;
 import edu.cornell.med.icb.learning.ClassificationParameters;
 import edu.cornell.med.icb.learning.ClassificationProblem;
 import edu.cornell.med.icb.learning.Classifier;
-import libsvm.svm;
-import libsvm.svm_model;
-import libsvm.svm_node;
-import libsvm.svm_problem;
+import libsvm.*;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,6 +43,11 @@ public class LibSvmClassifier implements Classifier {
     public ClassificationModel train(final ClassificationProblem problem) {
         final svm_problem nativeProblem = getNativeProblem(problem);
         return new LibSvmModel(svm.svm_train(nativeProblem, parameters.getNative()));
+    }
+
+    private boolean isRegressionModel(svm_parameter nativeParams) {
+        if (nativeParams.svm_type==svm_parameter.NU_SVR || nativeParams.svm_type==svm_parameter.EPSILON_SVR) return true;
+        else return false;
     }
 
     private svm_problem getNativeProblem(final ClassificationProblem problem) {

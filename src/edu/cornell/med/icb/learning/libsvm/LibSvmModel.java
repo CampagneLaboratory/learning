@@ -21,6 +21,7 @@ package edu.cornell.med.icb.learning.libsvm;
 import edu.cornell.med.icb.learning.ClassificationModel;
 import libsvm.svm;
 import libsvm.svm_model;
+import libsvm.svm_parameter;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -30,20 +31,28 @@ import java.io.*;
  */
 public class LibSvmModel extends ClassificationModel {
     svm_model nativeModel;
+    boolean isRegressionModel;
 
     public LibSvmModel(final svm_model svm_model) {
         super();
         nativeModel = svm_model;
+        this.isRegressionModel = isRegression();
     }
 
     public LibSvmModel(final InputStream stream) throws IOException {
         super();
         nativeModel = svm.svm_load_model(new BufferedReader(new InputStreamReader(stream)));
+        isRegressionModel= isRegression();
+    }
+
+    public boolean isRegression() {
+        return (nativeModel.param.svm_type== svm_parameter.NU_SVR||nativeModel.param.svm_type== svm_parameter.EPSILON_SVR);
     }
 
     public LibSvmModel(final String modelFilename) throws IOException {
         super();
         nativeModel = svm.svm_load_model(modelFilename);
+        isRegressionModel= isRegression();
     }
 
     @Override
@@ -53,8 +62,8 @@ public class LibSvmModel extends ClassificationModel {
 
     @Override
     public void write(final OutputStream stream) throws IOException {
-    // write to a temporary file, then copy content to the output stream:
-        File tmp=File.createTempFile("libsvm-model","vsm");
+        // write to a temporary file, then copy content to the output stream:
+        File tmp = File.createTempFile("libsvm-model", "vsm");
         svm.svm_save_model(tmp.getAbsolutePath(), nativeModel);
         IOUtils.copy(new FileInputStream(tmp), stream);
         IOUtils.closeQuietly(stream);

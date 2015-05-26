@@ -35,6 +35,11 @@ public class WekaModel extends ClassificationModel {
         classifier = wekaClassifier;
     }
 
+    @Override
+    public boolean isRegression() {
+        return false;
+    }
+
     /**
      * Store the weka model as a serialized object. Not much we can do with it except load it
      * again, but it is not clear how to save a model into a human-readable format from the
