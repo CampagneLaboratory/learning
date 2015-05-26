@@ -95,7 +95,7 @@ public class LibSvmParameters extends ClassificationParameters {
             nativeParameters.kernel_type = svm_parameter.SIGMOID;
         } else if (parameterName.equals("gamma")) {   // RBF 2nd parameter
             nativeParameters.gamma = value;
-        } else if (parameterName.equals("nu")) { // What is this paramater for?
+        } else if (parameterName.equals("nu")) { // What is this parameter for? The number of support vector for nu variants of the algorithm
             nativeParameters.nu = value;
         } else if (parameterName.equals("coef0")) { // polynomial coefficient
             nativeParameters.coef0 = value;
