@@ -123,7 +123,7 @@ public class CrossValidation {
      *
      * @return
      */
-    public EvaluationMeasure trainEvaluate() {
+    public EvaluationMeasure trainEvaluate(boolean evaluateRegression) {
         final ClassificationModel trainingModel = classifier.train(problem);
         final ContingencyTable ctable = new ContingencyTable();
 
@@ -135,7 +135,7 @@ public class CrossValidation {
             ctable.observeDecision(trueLabel, decision);
 
         }
-        ctable.average();
+        ctable.average(evaluateRegression);
         return convertToEvalMeasure(ctable);
     }
 
@@ -170,7 +170,7 @@ public class CrossValidation {
     public static EvaluationMeasure testSetEvaluation(final double[] decisions,
                                                       final double[] trueLabels,
                                                       final ObjectSet<CharSequence> evaluationMeasureNames,
-                                                      final boolean useRServer) {
+                                                      final boolean useRServer,boolean evaluateRegression) {
         final ContingencyTable ctable = new ContingencyTable();
         assert decisions.length == trueLabels.length : "decision and label arrays must have the same length.";
         for (int i = 0; i < trueLabels.length; i++) {
@@ -190,7 +190,7 @@ public class CrossValidation {
             ctable.observeDecision(trueLabel, binaryDecision);
 
         }
-        ctable.average();
+        ctable.average(evaluateRegression);
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
         try {
             evaluate(decisions, trueLabels, evaluationMeasureNames, measure, "", useRServer);
@@ -212,7 +212,7 @@ public class CrossValidation {
     public static EvaluationMeasure testSetEvaluation(final ObjectList<double[]> decisionList,
                                                       final ObjectList<double[]> trueLabelList,
                                                       final ObjectSet<CharSequence> evaluationMeasureNames,
-                                                      final boolean useRServer) {
+                                                      final boolean useRServer, boolean isRegressionModel) {
         final ContingencyTable ctable = new ContingencyTable();
 
         for (int j = 0; j < decisionList.size(); j++) {
@@ -237,7 +237,7 @@ public class CrossValidation {
             }
 
         }
-        ctable.average();
+        ctable.average(isRegressionModel);
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
         try {
             evaluate(decisionList, trueLabelList, evaluationMeasureNames, measure, "", useRServer);
@@ -254,7 +254,7 @@ public class CrossValidation {
      *
      * @return
      */
-    public EvaluationMeasure leaveOneOutEvaluation() {
+    public EvaluationMeasure leaveOneOutEvaluation(boolean evaluateRegression) {
         final ContingencyTable ctable = new ContingencyTable();
         final double[] decisionValues = new double[problem.getSize()];
         final double[] labels = new double[problem.getSize()];
@@ -278,7 +278,7 @@ public class CrossValidation {
             ctable.observeDecision(trueLabel, binaryDecision);
 
         }
-        ctable.average();
+        ctable.average(evaluateRegression);
         final EvaluationMeasure measure = convertToEvalMeasure(ctable);
         evaluate(decisionValues, labels, evaluationMeasureNames, measure, "", useRServer);
         return measure;
@@ -745,10 +745,10 @@ public class CrossValidation {
      * @param randomEngine Random engine to use when splitting the training set into folds.
      * @return Evaluation measures.
      */
-    public EvaluationMeasure crossValidation(final int k, final RandomEngine randomEngine) {
+    public EvaluationMeasure crossValidation(final int k, final RandomEngine randomEngine, boolean evaluateRegression) {
 
         this.randomAdapter = new RandomAdapter(randomEngine);
-        return this.crossValidation(k);
+        return this.crossValidation(k, evaluateRegression);
     }
 
     /**
@@ -757,7 +757,7 @@ public class CrossValidation {
      * @param k Number of folds for cross validation. Typical values are 5 or 10.
      * @return Evaluation measures.
      */
-    public EvaluationMeasure crossValidation(final int k) {
+    public EvaluationMeasure crossValidation(final int k, boolean evaluateRegression) {
         final ContingencyTable ctable = new ContingencyTable();
         final DoubleList aucValues = new DoubleArrayList();
         final DoubleList f1Values = new DoubleArrayList();
@@ -816,7 +816,7 @@ public class CrossValidation {
                     ctableMicro.observeDecision(trueLabel, binaryDecision);
                 }
 
-                ctableMicro.average();
+                ctableMicro.average(evaluateRegression);
                 f1Values.add(ctableMicro.getF1Measure());
                 final double aucForOneFold = Double.NaN;
 
@@ -826,7 +826,7 @@ public class CrossValidation {
                 aucValues.add(aucForOneFold);
             }
         }
-        ctable.average();
+        ctable.average(evaluateRegression);
 
         measure.setContingencyTable(ctable);
 

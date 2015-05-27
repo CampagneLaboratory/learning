@@ -37,10 +37,11 @@ public class ContingencyTable {
         count++;
     }
 
-    public void average() {
-        assert getTP() + getFP() + getFN() + getTN() == count :
-                "Values in contingency table must add up to number of test cases.";
-
+    public void average(boolean evaluateRegression) {
+        if (!evaluateRegression) {
+            assert getTP() + getFP() + getFN() + getTN() == count :
+                    "Values in contingency table must add up to number of test cases.";
+        }
 // average the loo contingency table:
         gfpp /= (double) count;
         gfmp /= (double) count;
